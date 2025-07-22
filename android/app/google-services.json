@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "476519585832",
+    "project_id": "workify-cb9a0",
+    "storage_bucket": "workify-cb9a0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:476519585832:android:997cb3f707a0eea1993d1d",
+        "android_client_info": {
+          "package_name": "com.dbestech.jobhubv2_0"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcuKc6B4skdGHNvtfGIMhxuYb5GUpedf4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

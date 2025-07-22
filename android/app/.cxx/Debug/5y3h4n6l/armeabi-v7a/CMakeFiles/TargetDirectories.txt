@@ -1,0 +1,2 @@
+/Users/ahmeddastagir/Downloads/jobhubv2_0_0-main 2/android/app/.cxx/Debug/5y3h4n6l/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/ahmeddastagir/Downloads/jobhubv2_0_0-main 2/android/app/.cxx/Debug/5y3h4n6l/armeabi-v7a/CMakeFiles/rebuild_cache.dir
