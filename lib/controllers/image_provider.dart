@@ -15,42 +15,98 @@ class ImageUpoader extends ChangeNotifier {
   String? imagePath;
 
   bool _doneUploading = false;
+  bool _isUploading = false;
 
-  bool get loggedIn => _doneUploading;
+  bool get doneUploading => _doneUploading;
+  bool get isUploading => _isUploading;
 
   set uploading(bool newState) {
     _doneUploading = newState;
     notifyListeners();
   }
 
+  set setUploading(bool newState) {
+    _isUploading = newState;
+    notifyListeners();
+  }
 
   List<String> imageFil = [];
 
   void pickImage() async {
-    XFile? _imageFile = await _picker.pickImage(source: ImageSource.gallery);
+    try {
+      XFile? _imageFile = await _picker.pickImage(source: ImageSource.gallery);
 
-    if (_imageFile != null) {
-      imageFil.add(_imageFile.path);
-      imageUpload(_imageFile).then((value) {
-        uploading = true;
-      });
-      imagePath = _imageFile.path;
-    } else {
-      return;
+      if (_imageFile != null) {
+        imageFil.add(_imageFile.path);
+        imagePath = _imageFile.path;
+        notifyListeners();
+        
+        // Start uploading
+        setUploading = true;
+        uploading = false; // Reset upload state
+        
+        String? uploadResult = await imageUpload(_imageFile);
+        if (uploadResult != null) {
+          uploading = true;
+          setUploading = false;
+          print('Image uploaded successfully: $uploadResult');
+          notifyListeners();
+        } else {
+          // Remove from list if upload failed
+          imageFil.removeLast();
+          imagePath = null;
+          setUploading = false;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      uploading = false;
+      setUploading = false;
+      notifyListeners();
     }
   }
 
   Future<String?> imageUpload(XFile upload) async {
-    File image = File(upload.path);
+    try {
+      File image = File(upload.path);
 
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child("jobhub")
-        .child("${uuid.v1()}.jpg");
-    await ref.putFile(image);
+      // Use the correct storage bucket from firebase options
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child("workify_images")
+          .child("profile_images")
+          .child("${uuid.v1()}.jpg");
+      
+      print('Uploading to path: workify_images/profile_images/${uuid.v1()}.jpg');
+      
+      UploadTask uploadTask = ref.putFile(image);
+      
+      // Wait for upload to complete
+      TaskSnapshot snapshot = await uploadTask;
+      
+      if (snapshot.state == TaskState.success) {
+        imageUrl = await ref.getDownloadURL();
+        print('Upload successful. Download URL: $imageUrl');
+        return imageUrl;
+      } else {
+        print('Upload failed. State: ${snapshot.state}');
+        return null;
+      }
+    } catch (e) {
+      print('Error uploading image: $e');
+      // Reset upload state on error
+      uploading = false;
+      return null;
+    }
+  }
 
-    imageUrl = (await ref.getDownloadURL());
-
-    return imageUrl;
+  void clearImage() {
+    imageFil.clear();
+    imagePath = null;
+    imageUrl = null;
+    _doneUploading = false;
+    _isUploading = false;
+    notifyListeners();
   }
 }

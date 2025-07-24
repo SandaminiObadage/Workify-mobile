@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
+import 'package:jobhubv2_0/constants/app_constants.dart';
 import 'package:jobhubv2_0/controllers/jobs_provider.dart';
 import 'package:jobhubv2_0/models/request/jobs/create_job.dart';
 import 'package:jobhubv2_0/services/helpers/jobs_helper.dart';
@@ -302,8 +303,7 @@ class _UploadJobsState extends State<UploadJobs> {
                     CustomOutlineBtn(
                       width: width,
                       hieght: 40,
-                      onTap: () {
-                  
+                      onTap: () async {
                         CreateJobsRequest model = CreateJobsRequest(
                             title: title.text,
                             location: location.text,
@@ -315,6 +315,7 @@ class _UploadJobsState extends State<UploadJobs> {
                             contract: 'contract',
                             imageUrl: imageUrl.text,
                             agentId: userUid,
+                            agentName: name, // Add agent name
                             requirements: [
                               requirements1.text,
                               requirements2.text,
@@ -325,8 +326,26 @@ class _UploadJobsState extends State<UploadJobs> {
 
                         var newModel = createJobsRequestToJson(model);
 
-                        JobsHelper.createJob(newModel);
-                        Get.to(() => const MainScreen());
+                        bool success = await JobsHelper.createJob(newModel);
+                        
+                        if (success) {
+                          Get.snackbar(
+                            "Success", 
+                            "Job uploaded successfully!",
+                            colorText: Color(kLight.value),
+                            backgroundColor: Color(kLightBlue.value),
+                            icon: const Icon(Icons.check_circle)
+                          );
+                          Get.offAll(() => const MainScreen());
+                        } else {
+                          Get.snackbar(
+                            "Error", 
+                            "Failed to upload job. Please try again.",
+                            colorText: Color(kLight.value),
+                            backgroundColor: Colors.red,
+                            icon: const Icon(Icons.error)
+                          );
+                        }
                       },
                       color: Color(kOrange.value),
                       color2: Colors.white,

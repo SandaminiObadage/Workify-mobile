@@ -6,6 +6,9 @@ const { verifyTokenAndAuthorization, verifyTokenAndAdmin } = require("../middlew
 // UPADATE USER
 router.put("/", verifyTokenAndAuthorization, userController.updateUser);
 
+// UPDATE USER PROFILE - specific route for profile updates
+router.put("/profile", verifyTokenAndAuthorization, userController.updateUser);
+
 // DELETE USER
 
 router.delete("/", verifyTokenAndAuthorization, userController.deleteUser);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
+import 'package:jobhubv2_0/constants/app_constants.dart';
 import 'package:jobhubv2_0/controllers/jobs_provider.dart';
 import 'package:jobhubv2_0/models/request/jobs/create_job.dart';
 import 'package:jobhubv2_0/services/helpers/jobs_helper.dart';
@@ -326,7 +327,7 @@ class _EditJobsState extends State<EditJobs> {
                           CustomOutlineBtn(
                             width: width,
                             hieght: 40,
-                            onTap: () {
+                            onTap: () async {
                               if (imageUrl.text.isEmpty) {
                                 imageUrl.text = editable.imageUrl;
                               }
@@ -341,6 +342,7 @@ class _EditJobsState extends State<EditJobs> {
                                   contract: contract.text,
                                   imageUrl: imageUrl.text,
                                   agentId: userUid,
+                                  agentName: name, // Add agent name
                                   requirements: [
                                     requirements1.text,
                                     requirements2.text,
@@ -351,8 +353,26 @@ class _EditJobsState extends State<EditJobs> {
 
                               var newModel = createJobsRequestToJson(model);
 
-                              JobsHelper.updateJob(editable.id, newModel);
-                              Get.to(() => const MainScreen());
+                              bool success = await JobsHelper.updateJob(editable.id, newModel);
+                              
+                              if (success) {
+                                Get.snackbar(
+                                  "Success", 
+                                  "Job updated successfully!",
+                                  colorText: Color(kLight.value),
+                                  backgroundColor: Color(kLightBlue.value),
+                                  icon: const Icon(Icons.check_circle)
+                                );
+                                Get.offAll(() => const MainScreen());
+                              } else {
+                                Get.snackbar(
+                                  "Error", 
+                                  "Failed to update job. Please try again.",
+                                  colorText: Color(kLight.value),
+                                  backgroundColor: Colors.red,
+                                  icon: const Icon(Icons.error)
+                                );
+                              }
                             },
                             color: Color(kOrange.value),
                             color2: Colors.white,

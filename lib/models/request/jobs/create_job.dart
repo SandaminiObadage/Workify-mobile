@@ -14,6 +14,7 @@ class CreateJobsRequest {
         required this.contract,
         required this.imageUrl,
         required this.agentId,
+        required this.agentName,
         required this.requirements,
     });
 
@@ -27,6 +28,7 @@ class CreateJobsRequest {
     final String contract;
     final String imageUrl;
     final String agentId;
+    final String agentName;
     final List<String> requirements;
 
     Map<String, dynamic> toJson() => {
@@ -40,6 +42,7 @@ class CreateJobsRequest {
         "contract": contract,
         "imageUrl": imageUrl,
         "agentId": agentId,
+        "agentName": agentName,
         "requirements": List<dynamic>.from(requirements.map((x) => x)),
     };
 }

@@ -74,20 +74,31 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                               child: CircleAvatar(
                                 backgroundColor: Color(kLightBlue.value),
                                 // backgroundImage: ,
-                                child: const Center(
-                                  child: Icon(Icons.photo_filter_rounded),
-                                ),
+                                child: imageUploader.isUploading 
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : const Center(
+                                        child: Icon(Icons.photo_filter_rounded),
+                                      ),
                               ),
                             )
                           : GestureDetector(
                               onTap: () {
-                                imageUploader.imageFil.clear();
+                                imageUploader.clearImage();
                                 setState(() {});
                               },
-                              child: CircleAvatar(
-                                backgroundColor: Color(kLightBlue.value),
-                                backgroundImage:
-                                    FileImage(File(imageUploader.imageFil[0])),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: Color(kLightBlue.value),
+                                    backgroundImage:
+                                        FileImage(File(imageUploader.imageFil[0])),
+                                  ),
+                                  if (imageUploader.isUploading)
+                                    const CircularProgressIndicator(color: Colors.white),
+                                  if (imageUploader.doneUploading)
+                                    const Icon(Icons.check_circle, color: Colors.green, size: 30),
+                                ],
                               ),
                             );
                     },
@@ -198,18 +209,31 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                     builder: (context, imageUploada, child) {
                       return CustomButton(
                           onTap: () {
-                            if (imageUploada.imageFil.isEmpty &&
-                                imageUploada.imageUrl == null) {
+                            if (imageUploada.imageFil.isEmpty) {
                               Get.snackbar("Image Missing",
                                   "Please upload an image to proceed",
                                   colorText: Color(kLight.value),
                                   backgroundColor: Color(kLightBlue.value),
                                   icon: const Icon(Icons.add_alert));
+                            } else if (imageUploada.isUploading) {
+                              Get.snackbar("Upload in Progress",
+                                  "Please wait for image upload to complete",
+                                  colorText: Color(kLight.value),
+                                  backgroundColor: Color(kOrange.value),
+                                  icon: const Icon(Icons.upload));
+                            } else if (imageUploada.imageUrl == null) {
+                              Get.snackbar("Upload Failed",
+                                  "Image upload failed. Please try again",
+                                  colorText: Color(kLight.value),
+                                  backgroundColor: Colors.red,
+                                  icon: const Icon(Icons.error));
+                              // Try to upload again
+                              imageUploada.pickImage();
                             } else {
                               ProfileUpdateReq model = ProfileUpdateReq(
                                   location: location.text,
                                   phone: phone.text,
-                                  profile: imageUploada.imageUrl.toString(),
+                                  profile: imageUploada.imageUrl!,
                                   skills: [
                                     skill0.text,
                                     skill1.text,
@@ -221,7 +245,7 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                               loginNotifier.updateProfile(model);
                             }
                           },
-                          text: "Update Profile");
+                          text: imageUploada.isUploading ? "Uploading..." : "Update Profile");
                     },
                   )
                 ],

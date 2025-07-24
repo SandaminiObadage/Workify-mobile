@@ -1,21 +1,49 @@
 const User = require("../models/User");
 const Agent = require("../models/Agent");
 const Skill = require("../models/Skills");
+const CryptoJS = require("crypto-js");
 
 module.exports = {
     updateUser: async (req, res) => {
         if (req.body.password) {
             req.body.password = CryptoJS.AES.encrypt(req.body.password, process.env.SECRET).toString();
         }
+        
         try {
+            // Extract skills from request body to handle separately
+            const { skills, ...userUpdateData } = req.body;
+            
+            // Update user basic information (excluding skills)
             const updatedUser = await User.findByIdAndUpdate(
                 req.user.id, {
-                $set: req.body
+                $set: userUpdateData
             }, { new: true });
+            
+            // Handle skills separately if provided
+            if (skills && Array.isArray(skills)) {
+                // Remove existing skills for this user
+                await Skill.deleteMany({ userId: req.user.id });
+                
+                // Add new skills (filter out empty strings)
+                const validSkills = skills.filter(skill => skill && skill.trim() !== '');
+                for (const skillText of validSkills) {
+                    const newSkill = new Skill({ 
+                        userId: req.user.id, 
+                        skill: skillText.trim() 
+                    });
+                    await newSkill.save();
+                }
+                
+                // Update user's skills boolean flag
+                await User.findByIdAndUpdate(req.user.id, { 
+                    $set: { skills: validSkills.length > 0 } 
+                });
+            }
+            
             const { password, __v, createdAt, ...others } = updatedUser._doc;
-
             res.status(200).json({ ...others });
         } catch (err) {
+            console.error('Error updating user:', err);
             res.status(500).json(err)
         }
     },

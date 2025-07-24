@@ -56,6 +56,12 @@ class _ProfilePageState extends State<ProfilePage> {
     } else {}
   }
 
+  refreshProfile() {
+    setState(() {
+      getUserProfile();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var zoomNotifier = Provider.of<ZoomNotifier>(context);
@@ -79,7 +85,8 @@ class _ProfilePageState extends State<ProfilePage> {
             : Consumer<ProfileNotifier>(
                 builder: (context, profileNitifier, child) {
                   if (loggedIn == true && widget.drawer == true) {
-                    userProfile = profileNitifier.getProfile();
+                    // Always refresh profile data when accessed from drawer
+                    userProfile = profileNitifier.getProfile(forceRefresh: true);
                   }
                   return FutureBuilder<ProfileRes>(
                       future: userProfile,
@@ -255,15 +262,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                     width: width,
                                     hieght: 40,
                                     onTap: () {
-                                      if (userData!.isAgent == true) {
+                                      if (userData.isAgent == true) {
                                         Get.to(() => const UploadJobs());
                                       } else if (userData.isAgent == false) {
                                         Get.to(() => const AgencyApplication());
                                       }
                                     },
                                     color: Color(kOrange.value),
-                                    text: userData == null ||
-                                            userData!.isAgent == true
+                                    text: userData.isAgent == true
                                         ? "Upload Job"
                                         : "Apply To Be an Agent",
                                   ),

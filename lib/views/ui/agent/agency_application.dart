@@ -99,8 +99,7 @@ class _AgencyApplicationState extends State<AgencyApplication> {
                     CustomOutlineBtn(
                       width: width,
                       hieght: 40,
-                      onTap: () {
-
+                      onTap: () async {
                         CreateAgent model = CreateAgent(
                             uid: userUid,
                             company: company.text,
@@ -109,8 +108,28 @@ class _AgencyApplicationState extends State<AgencyApplication> {
 
                         var newModel = createAgentToJson(model);
 
-                        AngenciesHelper.createAgent(newModel);
-                        Get.to(() => const MainScreen());
+                        bool success = await AngenciesHelper.createAgent(newModel);
+                        
+                        if (success) {
+                          Get.snackbar(
+                            "Success", 
+                            "Agent application submitted successfully! You can now upload jobs.",
+                            colorText: Color(kLight.value),
+                            backgroundColor: Color(kLightBlue.value),
+                            icon: const Icon(Icons.check_circle)
+                          );
+                          
+                          // Navigate to main screen and refresh profile
+                          Get.offAll(() => const MainScreen());
+                        } else {
+                          Get.snackbar(
+                            "Error", 
+                            "Failed to submit agent application. Please try again.",
+                            colorText: Color(kLight.value),
+                            backgroundColor: Colors.red,
+                            icon: const Icon(Icons.error)
+                          );
+                        }
                       },
                       color: Color(kOrange.value),
                       color2: Colors.white,

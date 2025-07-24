@@ -110,7 +110,8 @@ class LoginNotifier extends ChangeNotifier {
   }
 
   updateProfile(ProfileUpdateReq model) async {
-    AuthHelper.updateProfile(model).then((response) {
+    try {
+      bool response = await AuthHelper.updateProfile(model);
       if (response) {
         Get.snackbar("Profile Update", "Enjoy your search for a job",
             colorText: Color(kLight.value),
@@ -122,12 +123,17 @@ class LoginNotifier extends ChangeNotifier {
           // Get.to(() => const MainScreen());
         });
       } else {
-        Get.snackbar("Updating Failed", "Please try again",
+        Get.snackbar("Update Failed", "Please try again",
             colorText: Color(kLight.value),
             backgroundColor: Color(kOrange.value),
             icon: const Icon(Icons.add_alert));
       }
-    });
+    } catch (e) {
+      Get.snackbar("Update Failed", "Error: ${e.toString()}",
+          colorText: Color(kLight.value),
+          backgroundColor: Colors.red,
+          icon: const Icon(Icons.error));
+    }
   }
 
  Future<List<Skills>> getSkills() {

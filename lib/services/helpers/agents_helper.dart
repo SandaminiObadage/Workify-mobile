@@ -46,7 +46,17 @@ class AngenciesHelper {
 
   static Future<bool> createAgent(model) async {
     try {
-      Map<String, String> requestHeaders = {'Content-Type': 'application/json'};
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+
+      if (token == null) {
+        return false;
+      }
+
+      Map<String, String> requestHeaders = {
+        'Content-Type': 'application/json',
+        'authorization': 'Bearer $token'
+      };
 
       var url = Uri.http(Config.apiUrl, Config.getAgents);
       var response = await client.post(

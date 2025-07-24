@@ -72,6 +72,7 @@ class AuthHelper {
 
       if (token == null) {
         // Handle the case where the token is null (e.g., request a new token or logout).
+        print('No authentication token found');
         return false;
       }
 
@@ -87,14 +88,18 @@ class AuthHelper {
         body: jsonEncode(model),
       );
 
+      print('Profile update response: ${response.statusCode} - ${response.body}');
+
       if (response.statusCode == 200) {
         return true;
       } else {
         // Handle different error scenarios here, log errors, etc.
+        print('Profile update failed with status: ${response.statusCode}');
         return false;
       }
     } catch (e) {
       // Handle exceptions here (e.g., network issues, unexpected errors).
+      print('Exception during profile update: $e');
       return false;
     }
   }
