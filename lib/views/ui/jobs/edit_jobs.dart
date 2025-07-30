@@ -342,7 +342,7 @@ class _EditJobsState extends State<EditJobs> {
                                   contract: contract.text,
                                   imageUrl: imageUrl.text,
                                   agentId: userUid,
-                                  agentName: name, // Add agent name
+                                  agentName: name,
                                   requirements: [
                                     requirements1.text,
                                     requirements2.text,
@@ -363,7 +363,7 @@ class _EditJobsState extends State<EditJobs> {
                                   backgroundColor: Color(kLightBlue.value),
                                   icon: const Icon(Icons.check_circle)
                                 );
-                                Get.offAll(() => const MainScreen());
+                                Get.to(() => const MainScreen());
                               } else {
                                 Get.snackbar(
                                   "Error", 
@@ -376,7 +376,7 @@ class _EditJobsState extends State<EditJobs> {
                             },
                             color: Color(kOrange.value),
                             color2: Colors.white,
-                            text: "Upload Job",
+                            text: "Update Job",
                           ),
                         ],
                       );

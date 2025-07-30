@@ -181,21 +181,28 @@ class _JobPageState extends State<JobPage> {
                                                 color2: Color(kLight.value),
                                                 text: job.contract,
                                                 color: Color(kOrange.value)),
-                                            Row(
-                                              children: [
-                                                ReusableText(
-                                                    text: job.salary,
-                                                    style: appStyle(
-                                                        16,
-                                                        Color(kDark.value),
-                                                        FontWeight.w600)),
-                                                ReusableText(
-                                                    text: "/${job.period}",
-                                                    style: appStyle(
-                                                        16,
-                                                        Color(kDark.value),
-                                                        FontWeight.w600))
-                                              ],
+                                            Flexible(
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                        job.salary,
+                                                        style: appStyle(
+                                                            16,
+                                                            Color(kDark.value),
+                                                            FontWeight.w600),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis),
+                                                  ),
+                                                  Text(
+                                                      "/${job.period}",
+                                                      style: appStyle(
+                                                          16,
+                                                          Color(kDark.value),
+                                                          FontWeight.w600))
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),

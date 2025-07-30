@@ -29,7 +29,7 @@ class JobsHelper {
         headers: requestHeaders,
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == 201) {
         return true;
       } else {
         // Handle different error scenarios here.

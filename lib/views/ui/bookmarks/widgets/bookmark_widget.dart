@@ -33,35 +33,47 @@ class BookMarkTileWidget extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundImage: NetworkImage(job.job.imageUrl),
-                      ),
-                      const WidthSpacer(width: 10),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ReusableText(
-                              text: job.job.company,
-                              style: appStyle(
-                                  12, Color(kDark.value), FontWeight.w500)),
-                          SizedBox(
-                            width: width * 0.5,
-                            child: ReusableText(
-                                text: job.job.title,
-                                style: appStyle(12, Color(kDarkGrey.value),
-                                    FontWeight.normal)),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 25,
+                          backgroundImage: job.job.imageUrl.isNotEmpty && job.job.imageUrl != "file:///" 
+                            ? NetworkImage(job.job.imageUrl)
+                            : const AssetImage('assets/images/user.png') as ImageProvider,
+                          onBackgroundImageError: (exception, stackTrace) {
+                            // Handle image loading error silently
+                          },
+                        ),
+                        const WidthSpacer(width: 10),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  job.job.company,
+                                  style: appStyle(
+                                      12, Color(kDark.value), FontWeight.w500),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis),
+                              Text(
+                                  job.job.title,
+                                  style: appStyle(12, Color(kDarkGrey.value),
+                                      FontWeight.normal),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis),
+                              Text(
+                                  "${job.job.salary}  ${job.job.period}",
+                                  style: appStyle(
+                                      12, Color(kDarkGrey.value), FontWeight.w500),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis),
+                            ],
                           ),
-                         ReusableText(
-                              text: "${job.job.salary}  ${job.job.period}",
-                              style: appStyle(
-                                  12, Color(kDarkGrey.value), FontWeight.w500)),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                   CircleAvatar(
                     radius: 18,

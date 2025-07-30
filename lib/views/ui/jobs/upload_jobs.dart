@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
 import 'package:jobhubv2_0/constants/app_constants.dart';
 import 'package:jobhubv2_0/controllers/jobs_provider.dart';
 import 'package:jobhubv2_0/models/request/jobs/create_job.dart';
 import 'package:jobhubv2_0/services/helpers/jobs_helper.dart';
+import 'package:jobhubv2_0/services/helpers/image_upload_helper.dart';
 import 'package:jobhubv2_0/views/common/BackBtn.dart';
 import 'package:jobhubv2_0/views/common/app_bar.dart';
 import 'package:jobhubv2_0/views/common/custom_outline_btn.dart';
@@ -118,11 +118,11 @@ class _UploadJobsState extends State<UploadJobs> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         SizedBox(
-                          width: width * 0.8,
+                          width: width * 0.65,
                           child: Consumer<JobsNotifier>(
                             builder: (context, jobsNotifier, child) {
                               return buildtextfield(
-                                  hintText: "Logo Url",
+                                  hintText: "Logo URL (or use upload button)",
                                   controller: imageUrl,
                                   onChanged: (value) =>
                                       {jobsNotifier.setLogo(imageUrl.text)},
@@ -137,25 +137,47 @@ class _UploadJobsState extends State<UploadJobs> {
                             },
                           ),
                         ),
-                        Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: Consumer<JobsNotifier>(
-                              builder: (context, jobsNotifier, child) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    if (imageUrl.text.contains('https://') &&
-                                        imageUrl.text.isNotEmpty) {
-                                      jobsNotifier.setLogo(imageUrl.text);
-                                    }
-                                  },
-                                  child: Icon(
-                                    Entypo.upload_to_cloud,
-                                    size: 30,
-                                    color: Color(kOrange.value),
-                                  ),
+                        SizedBox(
+                          width: width * 0.25,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              // Show loading
+                              Get.snackbar(
+                                "Uploading", 
+                                "Please wait while we upload your image...",
+                                backgroundColor: Color(kOrange.value),
+                                colorText: Colors.white,
+                              );
+                              
+                              // Upload image
+                              String? uploadedUrl = await ImageUploadHelper.pickAndUploadImage('company_logos');
+                              
+                              if (uploadedUrl != null) {
+                                imageUrl.text = uploadedUrl;
+                                Get.snackbar(
+                                  "Success", 
+                                  "Image uploaded successfully!",
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
                                 );
-                              },
-                            ))
+                              } else {
+                                Get.snackbar(
+                                  "Error", 
+                                  "Failed to upload image. Please try again.",
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.upload_file, size: 16),
+                            label: const Text("Upload", style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(kOrange.value),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     buildtextfield(
@@ -312,10 +334,10 @@ class _UploadJobsState extends State<UploadJobs> {
                             description: description.text,
                             salary: salary.text,
                             period: jobsNotifier.selectedSalary,
-                            contract: 'contract',
+                            contract: contract.text,
                             imageUrl: imageUrl.text,
                             agentId: userUid,
-                            agentName: name, // Add agent name
+                            agentName: name,
                             requirements: [
                               requirements1.text,
                               requirements2.text,
@@ -336,7 +358,7 @@ class _UploadJobsState extends State<UploadJobs> {
                             backgroundColor: Color(kLightBlue.value),
                             icon: const Icon(Icons.check_circle)
                           );
-                          Get.offAll(() => const MainScreen());
+                          Get.to(() => const MainScreen());
                         } else {
                           Get.snackbar(
                             "Error", 

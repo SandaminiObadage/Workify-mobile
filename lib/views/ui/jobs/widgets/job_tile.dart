@@ -35,31 +35,41 @@ class VerticalTileWidget extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: NetworkImage(job.imageUrl),
-                        ),
-                        const WidthSpacer(width: 10),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ReusableText(
-                                text: job.company,
-                                style: appStyle(
-                                    16, Color(kDark.value), FontWeight.w600)),
-                            SizedBox(
-                              width: width * 0.6,
-                              child: ReusableText(
-                                  text: job.title,
-                                  style: appStyle(16, Color(kDarkGrey.value),
-                                      FontWeight.w600)),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundImage: job.imageUrl.isNotEmpty && job.imageUrl != "file:///" 
+                              ? NetworkImage(job.imageUrl)
+                              : const AssetImage('assets/images/user.png') as ImageProvider,
+                            onBackgroundImageError: (exception, stackTrace) {
+                              // Handle image loading error silently
+                            },
+                          ),
+                          const WidthSpacer(width: 10),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                    job.company,
+                                    style: appStyle(
+                                        16, Color(kDark.value), FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                    job.title,
+                                    style: appStyle(16, Color(kDarkGrey.value),
+                                        FontWeight.w600),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                     CircleAvatar(
                       radius: 18,
@@ -74,10 +84,12 @@ class VerticalTileWidget extends StatelessWidget {
                   padding: EdgeInsets.only(left: 65.w),
                   child: Row(
                     children: [
-                      ReusableText(
-                          text: job.salary,
-                          style:
-                              appStyle(16, Color(kDark.value), FontWeight.w600)),
+                      Flexible(
+                        child: ReusableText(
+                            text: job.salary,
+                            style:
+                                appStyle(16, Color(kDark.value), FontWeight.w600)),
+                      ),
                       ReusableText(
                           text: "/${job.period}",
                           style: appStyle(

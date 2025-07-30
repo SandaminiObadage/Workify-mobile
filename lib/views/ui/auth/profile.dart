@@ -19,13 +19,11 @@ import 'package:jobhubv2_0/views/common/width_spacer.dart';
 import 'package:jobhubv2_0/views/ui/agent/agency_application.dart';
 import 'package:jobhubv2_0/views/ui/auth/NonUser.dart';
 import 'package:jobhubv2_0/views/ui/auth/profile_update.dart';
-import 'package:jobhubv2_0/views/ui/auth/widgets/add_skill.dart';
 import 'package:jobhubv2_0/views/ui/auth/widgets/agent_tile.dart';
 import 'package:jobhubv2_0/views/ui/auth/widgets/edit_button.dart';
 import 'package:jobhubv2_0/views/ui/auth/widgets/skills.dart';
 import 'package:jobhubv2_0/views/ui/jobs/upload_jobs.dart';
 import 'package:jobhubv2_0/views/ui/mainscreen.dart';
-import 'package:jobhubv2_0/views/ui/onboarding/onboarding_screen.dart';
 import 'package:provider/provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -116,39 +114,47 @@ class _ProfilePageState extends State<ProfilePage> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Row(
-                                          children: [
-                                            const CircularAvata(
-                                              w: 50,
-                                              h: 50,
-                                              image:
-                                                  "https://ui-avatars.com/api/?name=Profile&background=0D8ABC&color=fff&size=128",
-                                            ),
-                                            const WidthSpacer(width: 20),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                ReusableText(
-                                                    text: userData?.username ??
-                                                        "username",
-                                                    style: appStyle(
-                                                        18,
-                                                        Color(kDark.value),
-                                                        FontWeight.w600)),
-                                                const WidthSpacer(width: 5),
-                                                ReusableText(
-                                                    text: userData?.email ??
-                                                        "email",
-                                                    style: appStyle(
-                                                        14,
-                                                        Color(kDarkGrey.value),
-                                                        FontWeight.normal))
-                                              ],
-                                            ),
-                                          ],
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              const CircularAvata(
+                                                w: 50,
+                                                h: 50,
+                                                image:
+                                                    "https://ui-avatars.com/api/?name=Profile&background=0D8ABC&color=fff&size=128",
+                                              ),
+                                              const WidthSpacer(width: 20),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                        userData?.username ??
+                                                            "username",
+                                                        style: appStyle(
+                                                            18,
+                                                            Color(kDark.value),
+                                                            FontWeight.w600),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis),
+                                                    const WidthSpacer(width: 5),
+                                                    Text(
+                                                        userData?.email ??
+                                                            "email",
+                                                        style: appStyle(
+                                                            14,
+                                                            Color(kDarkGrey.value),
+                                                            FontWeight.normal),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis)
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                         GestureDetector(
                                           onTap: () {
@@ -193,28 +199,32 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   size: 40),
                                             ),
                                             const WidthSpacer(width: 20),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                ReusableText(
-                                                    text: "Upload Your Resume",
-                                                    style: appStyle(
-                                                        16,
-                                                        Color(kDark.value),
-                                                        FontWeight.w500)),
-                                                FittedBox(
-                                                  child: Text(
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                      "Upload Your Resume",
+                                                      style: appStyle(
+                                                          16,
+                                                          Color(kDark.value),
+                                                          FontWeight.w500),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis),
+                                                  Text(
                                                       "Please make sure to upload your resume in PDF format",
                                                       style: appStyle(
                                                           8,
                                                           Color(
                                                               kDarkGrey.value),
-                                                          FontWeight.w500)),
-                                                ),
-                                              ],
+                                                          FontWeight.w500),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis),
+                                                ],
+                                              ),
                                             ),
                                             const WidthSpacer(width: 1)
                                           ],

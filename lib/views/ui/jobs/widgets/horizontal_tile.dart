@@ -30,54 +30,76 @@ class JobHorizontalTile extends StatelessWidget {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
                      CircleAvatar(
-                      radius: 25,
-                      backgroundImage: NetworkImage(job.imageUrl),
+                      radius: 20,
+                      backgroundImage: job.imageUrl.isNotEmpty && job.imageUrl != "file:///" 
+                        ? NetworkImage(job.imageUrl)
+                        : const AssetImage('assets/images/user.png') as ImageProvider,
+                      onBackgroundImageError: (exception, stackTrace) {
+                        // Handle image loading error silently
+                      },
                     ),
-                    const WidthSpacer(width: 15),
-                    Container(
-                      width: 160,
-                      padding: EdgeInsets.only(left:20, right: 20.w),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFFFFFF),
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                    const WidthSpacer(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFFFFF),
+                          borderRadius: BorderRadius.all(Radius.circular(15)),
+                        ),
+                        child: ReusableText(
+                            text: job.company,
+                            style: appStyle(16, Color(kDark.value), FontWeight.w600)),
                       ),
-                      child: ReusableText(
-                          text: job.company,
-                          style: appStyle(22, Color(kDark.value), FontWeight.w600)),
                     ),
                   ],
                 ),
-                const HeightSpacer(size: 15),
-                ReusableText(
-                    text: job.title,
-                    style: appStyle(20, Color(kDark.value), FontWeight.w600)),
-                ReusableText(
-                    text: job.location,
-                    style: appStyle(16, Color(kDarkGrey.value), FontWeight.w600)),
-                const HeightSpacer(size: 20),
+                const HeightSpacer(size: 10),
+                Flexible(
+                  child: Text(
+                      job.title,
+                      style: appStyle(18, Color(kDark.value), FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                ),
+                const HeightSpacer(size: 5),
+                Flexible(
+                  child: Text(
+                      job.location,
+                      style: appStyle(14, Color(kDarkGrey.value), FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ),
+                const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        ReusableText(
-                            text: job.salary,
-                            style: appStyle(
-                                20, Color(kDark.value), FontWeight.w600)),
-                        ReusableText(
-                            text: "/${job.period}",
-                            style: appStyle(
-                                18, Color(kDarkGrey.value), FontWeight.w600)),
-                      ],
+                    Flexible(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                                job.salary,
+                                style: appStyle(
+                                    18, Color(kDark.value), FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          ReusableText(
+                              text: "/${job.period}",
+                              style: appStyle(
+                                  16, Color(kDarkGrey.value), FontWeight.w600)),
+                        ],
+                      ),
                     ),
                     CircleAvatar(
-                      radius: 18,
+                      radius: 16,
                       backgroundColor: Color(kLight.value),
-                      child: const Icon(Ionicons.chevron_forward),
+                      child: const Icon(Ionicons.chevron_forward, size: 16),
                     )
                   ],
                 ),

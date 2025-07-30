@@ -31,41 +31,46 @@ class VerticalTile extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: Color(kLightGrey.value),
-                        radius: 25,
-                        backgroundImage:
-                             NetworkImage(job!.imageUrl),
-                      ),
-                      const WidthSpacer(width: 25),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ReusableText(
-                            text: job!.company,
-                            style: appStyle(
-                                18, Color(kDark.value), FontWeight.w600),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Color(kLightGrey.value),
+                          radius: 25,
+                          backgroundImage:
+                               NetworkImage(job!.imageUrl),
+                        ),
+                        const WidthSpacer(width: 25),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                job!.company,
+                                style: appStyle(
+                                    18, Color(kDark.value), FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                job!.title,
+                                style: appStyle(
+                                    16, Color(kDarkGrey.value), FontWeight.w600),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            ],
                           ),
-                          SizedBox(
-                            width: width * 0.5,
-                            child: ReusableText(
-                              text: job!.title,
-                              style: appStyle(
-                                  16, Color(kDarkGrey.value), FontWeight.w600),
-                            ),
-                          )
-                        ],
-                      ),
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(kLight.value),
-                        child: const Icon(Ionicons.chevron_forward),
-                      )
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Color(kLight.value),
+                    child: const Icon(Ionicons.chevron_forward),
+                  )
                 ],
               ),
               Padding(

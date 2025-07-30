@@ -44,10 +44,11 @@ class CustomField extends StatelessWidget {
               size: 30.h,
             ),
           ),
-          Container(
-            padding: const EdgeInsets.only(top: 20),
-            width: width * 0.73,
-            child: TextField(
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.only(top: 20),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              child: TextField(
                 keyboardType: keyboard,
                 obscureText: obscureText ?? false,
                 onEditingComplete: onEditingComplete,
@@ -85,6 +86,7 @@ class CustomField extends StatelessWidget {
                 cursorHeight: 20,
                 style: appStyle(14, Color(kDark.value), FontWeight.w500),
                 onSubmitted: validator),
+            ),
           ),
           GestureDetector(
             onTap: onEditingComplete,
