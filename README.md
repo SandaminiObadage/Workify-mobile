@@ -1,4 +1,4 @@
-# Flutter Job Hub App
+# Workify-Flutter Job Hub App
 
 A full-stack mobile application for job searching and management built with Flutter and Node.js.
 
