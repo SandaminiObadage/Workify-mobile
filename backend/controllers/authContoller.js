@@ -29,15 +29,24 @@ module.exports = {
 
     loginUser: async (req, res) => {
         try {
-            const user = await User.findOne({ email: req.body.email }, { __v: 0, createdAt: 0, updatedAt: 0, skills: 0, email: 0});
-            !user && res.status(401).json("Wrong Login Details")
+            console.log("Login attempt for email:", req.body.email);
+            const user = await User.findOne({ email: req.body.email });
+            if (!user) {
+                console.log("User not found");
+                return res.status(401).json("Wrong Login Details");
+            }
 
-
+            console.log("User found, attempting password decryption");
             const decrytedpass = CryptoJS.AES.decrypt(user.password, process.env.SECRET);
             const depassword = decrytedpass.toString(CryptoJS.enc.Utf8);
+            
+            console.log("Comparing passwords");
+            if (depassword !== req.body.password) {
+                console.log("Password mismatch");
+                return res.status(401).json("Wrong Login Details");
+            }
 
-            depassword !== req.body.password && res.status(401).json("Wrong Login Details");
-
+            console.log("Login successful, generating token");
             const userToken = jwt.sign({
                 id: user._id, isAdmin: user.isAdmin, isAgent: user.isAgent
             }, process.env.JWT_SEC,
@@ -49,7 +58,8 @@ module.exports = {
             res.status(200).json({ ...others, userToken });
 
         } catch (error) {
-            res.status(500)
+            console.log("Login error:", error);
+            res.status(500).json({ error: 'An error occurred during login.' });
         }
     },
 

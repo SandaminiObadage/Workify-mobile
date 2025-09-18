@@ -137,8 +137,6 @@ class _LoginPageState extends State<LoginPage> {
                                       String newModel = loginModelToJson(model);
                                       loginNotifier.userLogin(
                                           newModel, zoomNotifier);
-
-                                      Get.offAll(() => const MainScreen());
                                     } else {
                                       Get.snackbar("Sign Failed",
                                           "Please Check your credentials",
