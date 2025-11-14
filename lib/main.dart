@@ -10,6 +10,7 @@ import 'package:jobhubv2_0/controllers/jobs_provider.dart';
 import 'package:jobhubv2_0/controllers/login_provider.dart';
 import 'package:jobhubv2_0/controllers/onboarding_provider.dart';
 import 'package:jobhubv2_0/controllers/profile_provider.dart';
+import 'package:jobhubv2_0/controllers/search_provider.dart';
 import 'package:jobhubv2_0/controllers/signup_provider.dart';
 import 'package:jobhubv2_0/controllers/skills_provider.dart';
 import 'package:jobhubv2_0/controllers/zoom_provider.dart';
@@ -46,6 +47,7 @@ void main() async {
     ChangeNotifierProvider(create: (context) => ImageUpoader()),
     ChangeNotifierProvider(create: (context) => ProfileNotifier()),
     ChangeNotifierProvider(create: (context) => AddSkillNotifier()),
+    ChangeNotifierProvider(create: (context) => SearchNotifier()),
   ], child: const MyApp()));
 }
 

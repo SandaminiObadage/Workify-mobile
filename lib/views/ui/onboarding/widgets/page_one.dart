@@ -15,28 +15,67 @@ class PageOne extends StatelessWidget {
         width: width,
         height: hieght,
         color: Color(kDarkPurple.value),
-        child: Column(
-          children: [
-            const HeightSpacer(size: 70,),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  const HeightSpacer(size: 20),
 
-            Image.asset("assets/images/page1.png"),
+                  Expanded(
+                    flex: 5,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.45,
+                        maxWidth: MediaQuery.of(context).size.width * 0.85,
+                      ),
+                      child: Image.asset(
+                        "assets/images/page1.png",
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
 
-            const HeightSpacer(size: 40),
-            
-            Column(
-              children: [
-                ReusableText(text: "Find Your Dream Job", style: appStyle(30, Color(kLight.value), FontWeight.w500)),
-                const HeightSpacer(size: 10),
-                Padding(
-                  padding:  EdgeInsets.symmetric(horizontal:30.0.w),
-                  child: Text(
-                      "We help you find your dream job according to your skillset, location and preference to build your career",
-                    textAlign: TextAlign.center,
-                    style: appStyle(14, Color(kLight.value), FontWeight.normal),),
-                )
-              ],
-            )
-          ],
+                  const HeightSpacer(size: 20),
+                  
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0.w),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ReusableText(
+                            text: "Find Your Dream Job", 
+                            style: appStyle(28, Color(kLight.value), FontWeight.w500)
+                          ),
+                          const HeightSpacer(size: 15),
+                          Flexible(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10.0.w),
+                              child: Text(
+                                "We help you find your dream job according to your skillset, location and preference to build your career",
+                                textAlign: TextAlign.center,
+                                style: appStyle(14, Color(kLight.value), FontWeight.normal),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          const HeightSpacer(size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  const HeightSpacer(size: 20),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

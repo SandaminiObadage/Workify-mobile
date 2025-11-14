@@ -35,17 +35,24 @@ class JobPage extends StatefulWidget {
 }
 
 class _JobPageState extends State<JobPage> {
-  late Future<GetJobRes>? _job;
+  Future<GetJobRes>? _job; // Remove 'late' keyword since it can be null
   String userUid = '';
   String username = '';
-
   String sender = '';
+  bool _isApplying = false; // Add loading state for apply button
 
   @override
   void initState() {
-    _job = JobsHelper.getJob(widget.id);
-    getUserUid();
     super.initState();
+    _loadJobData();
+    getUserUid();
+  }
+
+  void _loadJobData() {
+    // Only load if not already loading
+    if (_job == null) {
+      _job = JobsHelper.getJob(widget.id);
+    }
   }
 
   getUserUid() async {
@@ -261,38 +268,50 @@ class _JobPageState extends State<JobPage> {
                               child: Padding(
                                 padding: EdgeInsets.only(bottom: 20.h),
                                 child: CustomOutlineBtn(
-                                    onTap: () async {
-                                      String messageType = "text";
-                                      String chatRoomId = "${job.id}.$userUid";
-                                      List<String> users = [
-                                        job.agentId,
-                                        userUid,
-                                      ];
-            
-                                      Map<String, dynamic> jobDetails = {
-                                        'job_id': job.id,
-                                        'image_url': job.imageUrl,
-                                        'salary':
-                                            "${job.salary} per ${job.period}",
-                                        'title': job.title,
-                                        'company': job.company,
-                                      };
-            
-                                      bool doesChatExist = await services
-                                          .chatRoomExists(chatRoomId);
-            
-                                      if (doesChatExist == false) {
-                                        createChatRoom(jobDetails, users,
-                                            chatRoomId, messageType);
-                                        zoomNotifier.currentIndex = 1;
-            
-                                        AppliedPost model =  AppliedPost(job: job.id);
-            
-                                        AppliedHelper.applyJob(model);
-                                        Get.to(() => const MainScreen());
-                                      } else {
-                                        zoomNotifier.currentIndex = 1;
-                                        Get.to(() => const MainScreen());
+                                    onTap: _isApplying ? null : () async {
+                                      if (_isApplying) return; // Prevent multiple taps
+                                      
+                                      setState(() {
+                                        _isApplying = true;
+                                      });
+
+                                      try {
+                                        // Skip Firebase chat for now since it's causing permission errors
+                                        // Apply for the job directly
+                                        AppliedPost model = AppliedPost(job: job.id);
+                                        bool success = await AppliedHelper.applyJob(model);
+                                        
+                                        if (success) {
+                                          zoomNotifier.currentIndex = 1;
+                                          Get.snackbar(
+                                            "Success", 
+                                            "Job application submitted successfully!",
+                                            backgroundColor: Colors.green,
+                                            colorText: Colors.white,
+                                          );
+                                          Get.to(() => const MainScreen());
+                                        } else {
+                                          Get.snackbar(
+                                            "Error", 
+                                            "Failed to submit application. Please try again.",
+                                            backgroundColor: Colors.red,
+                                            colorText: Colors.white,
+                                          );
+                                        }
+                                      } catch (e) {
+                                        print('Error applying for job: $e');
+                                        Get.snackbar(
+                                          "Error", 
+                                          "An error occurred. Please try again.",
+                                          backgroundColor: Colors.red,
+                                          colorText: Colors.white,
+                                        );
+                                      } finally {
+                                        if (mounted) {
+                                          setState(() {
+                                            _isApplying = false;
+                                          });
+                                        }
                                       }
                                     },
                                     color2: Color(kOrange.value),
@@ -300,7 +319,9 @@ class _JobPageState extends State<JobPage> {
                                     hieght: hieght * 0.06,
                                     text: loggedIn == false
                                         ? "Please login to apply"
-                                        : "Apply Now",
+                                        : _isApplying 
+                                          ? "Applying..."
+                                          : "Apply Now",
                                     color: Color(kLight.value)),
                               ),
                             ): Align(

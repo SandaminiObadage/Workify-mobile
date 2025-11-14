@@ -13,7 +13,7 @@ class AuthHelper {
   static Future<bool> login(model) async {
     Map<String, String> requestHeaders = {'Content-Type': 'application/json'};
 
-    var url = Uri.http(Config.apiUrl, Config.loginUrl);
+    var url = Uri.parse('${Config.baseUrl}${Config.loginUrl}');
     var response = await client.post(
       url,
       headers: requestHeaders,
@@ -46,7 +46,7 @@ class AuthHelper {
     try {
       Map<String, String> requestHeaders = {'Content-Type': 'application/json'};
 
-      var url = Uri.http(Config.apiUrl, Config.signupUrl);
+      var url = Uri.parse('${Config.baseUrl}${Config.signupUrl}');
       var response = await client.post(
         url,
         headers: requestHeaders,
@@ -81,7 +81,7 @@ class AuthHelper {
         'Authorization': 'Bearer $token',
       };
 
-      var url = Uri.http(Config.apiUrl, Config.profileUrl);
+      var url = Uri.parse('${Config.baseUrl}${Config.profileUrl}');
       var response = await client.put(
         url,
         headers: requestHeaders,
@@ -117,7 +117,7 @@ class AuthHelper {
       'authorization': 'Bearer $token',
     };
 
-    final Uri url = Uri.http(Config.apiUrl, Config.profileUrl);
+    final Uri url = Uri.parse('${Config.baseUrl}${Config.profileUrl}');
 
     try {
       final response = await http.get(url, headers: requestHeaders);
@@ -146,7 +146,7 @@ class AuthHelper {
       'authorization': 'Bearer $token',
     };
 
-    final Uri url = Uri.http(Config.apiUrl, Config.skills);
+    final Uri url = Uri.parse('${Config.baseUrl}${Config.skills}');
   
 
     try {
@@ -177,7 +177,7 @@ class AuthHelper {
       'authorization': 'Bearer $token',
     };
 
-    final Uri url = Uri.http(Config.apiUrl, Config.skills);
+    final Uri url = Uri.parse('${Config.baseUrl}${Config.skills}');
 
     try {
       final response = await http.post(url,body: model, headers: requestHeaders);
@@ -206,7 +206,7 @@ class AuthHelper {
       'authorization': 'Bearer $token',
     };
 
-    final Uri url = Uri.http(Config.apiUrl, "${Config.skills}/$id");
+    final Uri url = Uri.parse('${Config.baseUrl}${Config.skills}/$id');
 
     try {
       final response = await http.delete(url, headers: requestHeaders);

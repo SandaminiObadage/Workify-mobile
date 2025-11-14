@@ -57,12 +57,18 @@ class _HomePageState extends State<HomePage> {
                     },
                     child: ClipRRect(
                       borderRadius: const BorderRadius.all(Radius.circular(50)),
-                      child: CachedNetworkImage(
+                      child: Container(
                         width: 25.w,
                         height: 25.h,
-                        fit: BoxFit.cover,
-                        imageUrl:
-                            "https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=128",
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D8ABC),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 15.w,
+                        ),
                       ),
                     )),
               )

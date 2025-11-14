@@ -27,6 +27,7 @@ router.get("/agent/:id", jobController.getAgentJobs);
 // SEARCH FOR JOBS
 router.get("/search/:key", jobController.searchJobs);
 
-
+// ADVANCED SEARCH WITH FILTERS
+router.post("/search/advanced", jobController.advancedSearch);
 
 module.exports = router

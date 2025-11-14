@@ -51,7 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (widget.drawer == false && loginNotifier.loggedIn == true) {
       userProfile = AuthHelper.getProfile();
-    } else {}
+    }
   }
 
   refreshProfile() {
@@ -82,9 +82,13 @@ class _ProfilePageState extends State<ProfilePage> {
             ? const NonUser()
             : Consumer<ProfileNotifier>(
                 builder: (context, profileNitifier, child) {
-                  if (loggedIn == true && widget.drawer == true) {
-                    // Always refresh profile data when accessed from drawer
-                    userProfile = profileNitifier.getProfile(forceRefresh: true);
+                  // Only set userProfile once, not on every build
+                  if (userProfile == null && loggedIn == true) {
+                    if (widget.drawer == true) {
+                      userProfile = profileNitifier.getProfile(forceRefresh: true);
+                    } else {
+                      userProfile = AuthHelper.getProfile();
+                    }
                   }
                   return FutureBuilder<ProfileRes>(
                       future: userProfile,

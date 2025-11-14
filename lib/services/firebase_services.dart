@@ -22,10 +22,15 @@ class FirebaseServices {
   }
 
   createChatRoom({chatData}) {
-    chats.doc(chatData['chatRoomId']).set(chatData).catchError((e) {
-      debugPrint(e.toString());
-    });
-    debugPrint('Completed creating the chat');
+    try {
+      chats.doc(chatData['chatRoomId']).set(chatData).catchError((e) {
+        debugPrint('Firebase error in createChatRoom: ${e.toString()}');
+      });
+      debugPrint('Completed creating the chat');
+    } catch (e) {
+      debugPrint('Error creating chat room: $e');
+      // Continue without chat functionality if Firebase fails
+    }
   }
 
   void addTypingStatus(String chatRoomId) {
@@ -72,13 +77,20 @@ class FirebaseServices {
   }
 
   Future<bool> chatRoomExists(chatRoomId) async {
-    // Reference to the chat room document
-    DocumentReference chatRoomRef = chats.doc(chatRoomId);
+    try {
+      // Reference to the chat room document
+      DocumentReference chatRoomRef = chats.doc(chatRoomId);
 
-    // Check if the chat room document exists
-    DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
+      // Check if the chat room document exists
+      DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
 
-    return chatRoomSnapshot.exists;
+      return chatRoomSnapshot.exists;
+    } catch (e) {
+      // If Firebase is not configured or has permission issues, return false
+      // This allows the app to continue functioning without chat features
+      print('Firebase error: $e');
+      return false;
+    }
   }
 
   Future<Stream<QuerySnapshot>> getChatRooms(String userUid) async {

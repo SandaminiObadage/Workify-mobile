@@ -74,7 +74,7 @@ class _EditJobsState extends State<EditJobs> {
                   ReusableText(
                       text: "Job Uploads",
                       style: appStyle(14, Colors.white, FontWeight.w600)),
-                  imageUrl.text.isNotEmpty && imageUrl.text.contains('https://')
+                  imageUrl.text.isNotEmpty && (imageUrl.text.contains('https://') || imageUrl.text.contains('http://'))
                       ? Consumer<JobsNotifier>(
                           builder: (context, jobsNotifier, child) {
                             return CircularAvata(
@@ -144,8 +144,7 @@ class _EditJobsState extends State<EditJobs> {
                                             },
                                         onSubmitted: (value) {
                                           if (value!.isEmpty &&
-                                              imageUrl.text
-                                                  .contains('https://')) {
+                                              (imageUrl.text.contains('https://') || imageUrl.text.contains('http://'))) {
                                             return "Please fill this field";
                                           } else {
                                             return null;
@@ -160,8 +159,7 @@ class _EditJobsState extends State<EditJobs> {
                                     builder: (context, jobsNotifier, child) {
                                       return GestureDetector(
                                         onTap: () {
-                                          if (imageUrl.text
-                                                  .contains('https://') &&
+                                          if ((imageUrl.text.contains('https://') || imageUrl.text.contains('http://')) &&
                                               imageUrl.text.isNotEmpty) {
                                             jobsNotifier.setLogo(imageUrl.text);
                                           }

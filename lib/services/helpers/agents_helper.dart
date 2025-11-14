@@ -12,7 +12,7 @@ class AngenciesHelper {
 
   // DELETE BOOKMARKS
   static Future<List<Agents>> getsAgents() async {
-    var url = Uri.http(Config.apiUrl, Config.getAgents);
+    var url = Uri.parse('${Config.baseUrl}${Config.getAgents}');
     var response = await client.get(
       url,
     );

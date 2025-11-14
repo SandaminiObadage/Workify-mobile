@@ -18,7 +18,7 @@ class AppliedHelper {
       'authorization': 'Bearer $token'
     };
 
-    var url = Uri.http(Config.apiUrl, Config.applied);
+    var url = Uri.parse('${Config.baseUrl}${Config.applied}');
     var response = await client.post(url,
         headers: requestHeaders, body: jsonEncode(model.toJson()));
 
@@ -39,7 +39,7 @@ class AppliedHelper {
       'authorization': 'Bearer $token'
     };
 
-    var url = Uri.http(Config.apiUrl, Config.applied);
+    var url = Uri.parse('${Config.baseUrl}${Config.applied}');
     var response = await client.get(
       url,
       headers: requestHeaders,

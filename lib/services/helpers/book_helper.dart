@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as https;
+import 'package:http/http.dart' as http;
 import 'package:jobhubv2_0/models/request/bookmarks/bookmarks_model.dart';
 import 'package:jobhubv2_0/models/response/bookmarks/all_bookmarks.dart';
 import 'package:jobhubv2_0/models/response/bookmarks/bookmark.dart';
@@ -7,7 +7,7 @@ import 'package:jobhubv2_0/services/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BookMarkHelper {
-  static var client = https.Client();
+  static var client = http.Client();
 
 // ADD BOOKMARKS
   static Future<BookMark> addBookmarks(BookmarkReqResModel model) async {
@@ -19,7 +19,7 @@ class BookMarkHelper {
       'authorization': 'Bearer $token'
     };
 
-    var url = Uri.https(Config.apiUrl, Config.bookmarkUrl);
+    var url = Uri.parse('${Config.baseUrl}${Config.bookmarkUrl}');
     var response = await client.post(url,
         headers: requestHeaders, body: jsonEncode(model.toJson()));
 
@@ -41,7 +41,7 @@ class BookMarkHelper {
       'authorization': 'Bearer $token'
     };
 
-    var url = Uri.https(Config.apiUrl, "${Config.bookmarkUrl}/$jobId");
+    var url = Uri.parse('${Config.baseUrl}${Config.bookmarkUrl}/$jobId');
     var response = await client.delete(
       url,
       headers: requestHeaders,
@@ -64,7 +64,7 @@ class BookMarkHelper {
       'authorization': 'Bearer $token'
     };
 
-    var url = Uri.https(Config.apiUrl, Config.bookmarkUrl);
+    var url = Uri.parse('${Config.baseUrl}${Config.bookmarkUrl}');
     var response = await client.get(
       url,
       headers: requestHeaders,
@@ -93,7 +93,7 @@ class BookMarkHelper {
         'authorization': 'Bearer $token'
       };
 
-      var url = Uri.https(Config.apiUrl, "${Config.singleBookmarkUrl}$jobId");
+      var url = Uri.parse('${Config.baseUrl}${Config.singleBookmarkUrl}$jobId');
       var response = await client.get(
         url,
         headers: requestHeaders,

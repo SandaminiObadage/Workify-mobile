@@ -1,6 +1,7 @@
 class Config {
   //static const apiUrl = "jobhub-v2-production.up.railway.app";
-  static const apiUrl = "10.0.2.2:5002"; // Use 10.0.2.2 for Android emulator to access localhost
+  static const apiUrl = "localhost:5002"; // Use localhost for web/Chrome
+  static const String baseUrl = "http://localhost:5002"; // Complete URL with protocol for API calls
   static const String loginUrl = "/api/login";
   static const String signupUrl = "/api/register";
   static const String jobs = "/api/jobs";
