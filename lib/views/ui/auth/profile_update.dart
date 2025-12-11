@@ -209,19 +209,13 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                     builder: (context, imageUploada, child) {
                       return CustomButton(
                           onTap: () {
-                            if (imageUploada.imageFil.isEmpty) {
-                              Get.snackbar("Image Missing",
-                                  "Please upload an image to proceed",
-                                  colorText: Color(kLight.value),
-                                  backgroundColor: Color(kLightBlue.value),
-                                  icon: const Icon(Icons.add_alert));
-                            } else if (imageUploada.isUploading) {
+                            if (imageUploada.isUploading) {
                               Get.snackbar("Upload in Progress",
                                   "Please wait for image upload to complete",
                                   colorText: Color(kLight.value),
                                   backgroundColor: Color(kOrange.value),
                                   icon: const Icon(Icons.upload));
-                            } else if (imageUploada.imageUrl == null) {
+                            } else if (imageUploada.imageFil.isNotEmpty && imageUploada.imageUrl == null) {
                               Get.snackbar("Upload Failed",
                                   "Image upload failed. Please try again",
                                   colorText: Color(kLight.value),
@@ -233,7 +227,7 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                               ProfileUpdateReq model = ProfileUpdateReq(
                                   location: location.text,
                                   phone: phone.text,
-                                  profile: imageUploada.imageUrl!,
+                                  profile: imageUploada.imageUrl,
                                   skills: [
                                     skill0.text,
                                     skill1.text,

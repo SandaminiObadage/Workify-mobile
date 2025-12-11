@@ -5,6 +5,7 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
 import 'package:jobhubv2_0/controllers/login_provider.dart';
 import 'package:jobhubv2_0/controllers/profile_provider.dart';
+import 'package:jobhubv2_0/controllers/resume_provider.dart';
 import 'package:jobhubv2_0/controllers/zoom_provider.dart';
 import 'package:jobhubv2_0/models/response/auth/profile_model.dart';
 import 'package:jobhubv2_0/services/helpers/auth_helper.dart';
@@ -42,6 +43,11 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     getUserProfile();
+    // Load saved resume on profile page load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      var resumeProvider = Provider.of<ResumeProvider>(context, listen: false);
+      resumeProvider.loadSavedResume();
+    });
     super.initState();
   }
 
@@ -210,23 +216,46 @@ class _ProfilePageState extends State<ProfilePage> {
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.center,
                                                 children: [
-                                                  Text(
-                                                      "Upload Your Resume",
-                                                      style: appStyle(
-                                                          16,
-                                                          Color(kDark.value),
-                                                          FontWeight.w500),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis),
-                                                  Text(
-                                                      "Please make sure to upload your resume in PDF format",
-                                                      style: appStyle(
-                                                          8,
-                                                          Color(
-                                                              kDarkGrey.value),
-                                                          FontWeight.w500),
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis),
+                                                  Consumer<ResumeProvider>(
+                                                    builder: (context, resumeProvider, child) {
+                                                      return Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                              resumeProvider.resumeUrl != null 
+                                                                  ? "Resume Uploaded"
+                                                                  : "Upload Your Resume",
+                                                              style: appStyle(
+                                                                  16,
+                                                                  resumeProvider.resumeUrl != null 
+                                                                      ? Colors.green
+                                                                      : Color(kDark.value),
+                                                                  FontWeight.w500),
+                                                              maxLines: 1,
+                                                              overflow: TextOverflow.ellipsis),
+                                                          if (resumeProvider.resumeUrl != null)
+                                                            Text(
+                                                                resumeProvider.resumeUrl!,
+                                                                style: appStyle(
+                                                                    8,
+                                                                    Colors.green.shade700,
+                                                                    FontWeight.w500),
+                                                                maxLines: 2,
+                                                                overflow: TextOverflow.ellipsis)
+                                                          else
+                                                            Text(
+                                                                "Please make sure to upload your resume in PDF format",
+                                                                style: appStyle(
+                                                                    8,
+                                                                    Color(
+                                                                        kDarkGrey.value),
+                                                                    FontWeight.w500),
+                                                                maxLines: 2,
+                                                                overflow: TextOverflow.ellipsis),
+                                                        ],
+                                                      );
+                                                    },
+                                                  ),
                                                 ],
                                               ),
                                             ),
@@ -236,8 +265,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                       ),
                                       Positioned(
                                           right: 0.w,
-                                          child: EditButton(
-                                            onTap: () {},
+                                          child: Consumer<ResumeProvider>(
+                                            builder: (context, resumeProvider, child) {
+                                              return EditButton(
+                                                onTap: () {
+                                                  resumeProvider.uploadResume();
+                                                },
+                                              );
+                                            },
                                           ))
                                     ],
                                   ),

@@ -8,26 +8,26 @@ class ProfileUpdateReq {
     ProfileUpdateReq({
         required this.location,
         required this.phone,
-        required this.profile,
+        this.profile,
         required this.skills,
     });
 
     final String location;
     final String phone;
-    final String profile;
+    final String? profile;
     final List<String> skills;
 
     factory ProfileUpdateReq.fromJson(Map<String, dynamic> json) => ProfileUpdateReq(
         location: json["location"],
         phone: json["phone"],
         profile: json["profile"],
-        skills: List<String>.from(json["skills"].map((x) => x)),
+        skills: List<String>.from(json["skills"].map((x) => x) ?? []),
     );
 
     Map<String, dynamic> toJson() => {
         "location": location,
         "phone": phone,
-        "profile": profile,
+        if (profile != null) "profile": profile,
         "skills": List<dynamic>.from(skills.map((x) => x)),
     };
 }

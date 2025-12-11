@@ -189,6 +189,56 @@ module.exports = {
         }
     },
 
+    updateResume: async (req, res) => {
+        try {
+            const { resume } = req.body;
 
+            if (!resume) {
+                return res.status(400).json({ message: "Resume URL is required" });
+            }
+
+            const updatedUser = await User.findByIdAndUpdate(
+                req.user.id,
+                { $set: { resume } },
+                { new: true }
+            );
+
+            const { password, __v, createdAt, ...others } = updatedUser._doc;
+            res.status(200).json({ 
+                message: "Resume updated successfully",
+                resume: updatedUser.resume 
+            });
+        } catch (err) {
+            console.error('Error updating resume:', err);
+            res.status(500).json({ message: "Error updating resume", error: err });
+        }
+    },
+
+    uploadResume: async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: "No file uploaded" });
+            }
+
+            const resumeFileName = `${req.user.id}_${Date.now()}_${req.file.originalname}`;
+            const resumeUrl = `/resumes/${resumeFileName}`;
+
+            // Update user with resume URL
+            const updatedUser = await User.findByIdAndUpdate(
+                req.user.id,
+                { $set: { resume: resumeUrl } },
+                { new: true }
+            );
+
+            res.status(200).json({ 
+                message: "Resume uploaded successfully",
+                resume: updatedUser.resume,
+                fileName: resumeFileName
+            });
+        } catch (err) {
+            console.error('Error uploading resume:', err);
+            res.status(500).json({ message: "Error uploading resume", error: err });
+        }
+    },
 
 }

@@ -26,26 +26,13 @@ mongoose.connect(process.env.MONGO_URL)
 
 // CORS Configuration for HTTP only - Allow all origins
 app.use(cors({
-    origin: true, // Allow all origins
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    credentials: false, // Set to false for HTTP
+    credentials: false,
     optionsSuccessStatus: 200
 }));
 
-// Additional CORS middleware to handle HTTP requests
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Allow-Credentials', 'false');
-    
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
-    } else {
-        next();
-    }
-});
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api/", authRoute);
