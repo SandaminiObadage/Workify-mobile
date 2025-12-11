@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const path = require('path');
 const app = express();
 const dotenv = require('dotenv');
 
@@ -35,6 +36,10 @@ app.use(cors({
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve uploaded resumes as static files
+app.use('/resumes', express.static(path.join(__dirname, 'resumes')));
+
 app.use("/api/", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/jobs", jobRoute);

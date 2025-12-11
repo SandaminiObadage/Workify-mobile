@@ -2,9 +2,26 @@ const router = require("express").Router();
 const userController = require("../controllers/userController");
 const { verifyTokenAndAuthorization, verifyTokenAndAdmin } = require("../middleware/verifyToken");
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-// Configure multer for file uploads
-const storage = multer.memoryStorage();
+// Ensure resumes directory exists
+const resumesDir = path.join(__dirname, '../resumes');
+if (!fs.existsSync(resumesDir)) {
+  fs.mkdirSync(resumesDir, { recursive: true });
+}
+
+// Configure multer for file uploads to disk
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, resumesDir);
+  },
+  filename: (req, file, cb) => {
+    const resumeFileName = `${req.user.id}_${Date.now()}_${file.originalname}`;
+    cb(null, resumeFileName);
+  }
+});
+
 const upload = multer({ 
   storage: storage,
   fileFilter: (req, file, cb) => {
@@ -40,6 +57,12 @@ router.put("/resume", verifyTokenAndAuthorization, userController.updateResume);
 
 // UPLOAD RESUME
 router.post("/upload-resume", verifyTokenAndAuthorization, upload.single('resume'), userController.uploadResume);
+
+// GET RESUME
+router.get("/resume", verifyTokenAndAuthorization, userController.getResume);
+
+// DOWNLOAD RESUME
+router.get("/resume/download/:fileName", verifyTokenAndAuthorization, userController.downloadResume);
 
 // DELETE USER
 

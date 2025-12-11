@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:jobhubv2_0/services/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:html' as html show Blob, Url, AnchorElement;
 
 class ResumeHelper {
   // Pick and upload resume directly to backend
@@ -68,9 +70,13 @@ class ResumeHelper {
       print('Resume upload response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
-        // Save resume URL to local preferences
-        await prefs.setString('resumeUrl', fileName);
-        return fileName;
+        // Parse response to get the server-generated filename
+        final responseData = json.decode(response.body);
+        final serverFileName = responseData['fileName'] as String;
+        
+        // Save the server-generated filename to local preferences
+        await prefs.setString('resumeUrl', serverFileName);
+        return serverFileName;
       } else {
         print('Failed to upload resume: ${response.statusCode}');
         return null;
@@ -101,6 +107,44 @@ class ResumeHelper {
     } catch (e) {
       print('Error getting resume URL: $e');
       return null;
+    }
+  }
+
+  // Download resume from backend
+  static Future<void> downloadResume(String fileName) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+
+      if (token == null) {
+        print('No authentication token found');
+        return;
+      }
+
+      final String downloadUrl = '${Config.baseUrl}/api/users/resume/download/$fileName';
+      
+      print('Downloading resume from: $downloadUrl');
+      
+      // For web, use dart:html to download the file
+      if (kIsWeb) {
+        final request = http.Request('GET', Uri.parse(downloadUrl));
+        request.headers['Authorization'] = 'Bearer $token';
+        
+        final response = await request.send();
+        if (response.statusCode == 200) {
+          final bytes = await response.stream.toBytes();
+          // Create blob and download for web
+          final blob = html.Blob([bytes]);
+          final url = html.Url.createObjectUrlFromBlob(blob);
+          final anchor = html.AnchorElement(href: url)
+            ..setAttribute("download", fileName)
+            ..click();
+          html.Url.revokeObjectUrl(url);
+        }
+      }
+    } catch (e) {
+      print('Error downloading resume: $e');
+      rethrow;
     }
   }
 }

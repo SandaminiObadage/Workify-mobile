@@ -81,4 +81,43 @@ class ResumeProvider extends ChangeNotifier {
       print('Error loading resume: $e');
     }
   }
+
+  // Download resume
+  Future<void> downloadResume() async {
+    try {
+      if (_resumeUrl == null) {
+        Get.snackbar(
+          "Error",
+          "No resume available",
+          colorText: Colors.white,
+          backgroundColor: Colors.red,
+          icon: const Icon(Icons.error, color: Colors.white),
+        );
+        return;
+      }
+
+      // Extract filename from path (e.g., /resumes/filename.pdf -> filename.pdf)
+      final fileName = _resumeUrl!.split('/').last;
+      
+      // Call download helper
+      await ResumeHelper.downloadResume(fileName);
+      
+      Get.snackbar(
+        "Success",
+        "Resume downloading...",
+        colorText: Colors.white,
+        backgroundColor: Colors.green,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to download resume: $e",
+        colorText: Colors.white,
+        backgroundColor: Colors.red,
+        icon: const Icon(Icons.error, color: Colors.white),
+      );
+    }
+  }
 }

@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Agent = require("../models/Agent");
 const Skill = require("../models/Skills");
+const Resume = require("../models/Resume");
 const CryptoJS = require("crypto-js");
 
 module.exports = {
@@ -220,24 +221,102 @@ module.exports = {
                 return res.status(400).json({ message: "No file uploaded" });
             }
 
-            const resumeFileName = `${req.user.id}_${Date.now()}_${req.file.originalname}`;
-            const resumeUrl = `/resumes/${resumeFileName}`;
+            const resumeFileName = req.file.filename; // multer already created this
+            const filePath = `/resumes/${resumeFileName}`;
 
-            // Update user with resume URL
-            const updatedUser = await User.findByIdAndUpdate(
+            // Delete previous resume if exists
+            const oldResume = await Resume.findOne({ userId: req.user.id });
+            if (oldResume) {
+                // Delete old file from disk
+                const fs = require('fs');
+                const path = require('path');
+                const oldFilePath = path.join(__dirname, '../resumes', oldResume.fileName);
+                if (fs.existsSync(oldFilePath)) {
+                    fs.unlinkSync(oldFilePath);
+                }
+                // Delete from database
+                await Resume.deleteMany({ userId: req.user.id });
+            }
+
+            // Create new resume document
+            const newResume = new Resume({
+                userId: req.user.id,
+                fileName: resumeFileName,
+                originalFileName: req.file.originalname,
+                filePath: filePath
+            });
+
+            await newResume.save();
+
+            // Also update user's resume field for quick access
+            await User.findByIdAndUpdate(
                 req.user.id,
-                { $set: { resume: resumeUrl } },
+                { $set: { resume: filePath } },
                 { new: true }
             );
 
             res.status(200).json({ 
                 message: "Resume uploaded successfully",
-                resume: updatedUser.resume,
-                fileName: resumeFileName
+                resume: filePath,
+                fileName: resumeFileName,
+                resumeId: newResume._id
             });
         } catch (err) {
             console.error('Error uploading resume:', err);
             res.status(500).json({ message: "Error uploading resume", error: err });
+        }
+    },
+
+    getResume: async (req, res) => {
+        try {
+            const resume = await Resume.findOne({ userId: req.user.id }).sort({ uploadedAt: -1 });
+            
+            if (!resume) {
+                return res.status(404).json({ message: "No resume found" });
+            }
+
+            res.status(200).json(resume);
+        } catch (err) {
+            console.error('Error fetching resume:', err);
+            res.status(500).json({ message: "Error fetching resume", error: err });
+        }
+    },
+
+    downloadResume: async (req, res) => {
+        try {
+            const fileName = req.params.fileName;
+            const path = require('path');
+            const fs = require('fs');
+            
+            // Verify the file belongs to the user
+            const resume = await Resume.findOne({ 
+                userId: req.user.id, 
+                fileName: fileName 
+            });
+            
+            if (!resume) {
+                return res.status(404).json({ message: "Resume not found or unauthorized" });
+            }
+
+            const filePath = path.join(__dirname, '../resumes', fileName);
+            
+            // Check if file exists
+            if (!fs.existsSync(filePath)) {
+                return res.status(404).json({ message: "File not found on server" });
+            }
+
+            // Send file as download
+            res.download(filePath, resume.originalFileName, (err) => {
+                if (err) {
+                    console.error('Error downloading file:', err);
+                    if (!res.headersSent) {
+                        res.status(500).json({ message: "Error downloading file" });
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('Error in downloadResume:', err);
+            res.status(500).json({ message: "Error downloading resume", error: err });
         }
     },
 

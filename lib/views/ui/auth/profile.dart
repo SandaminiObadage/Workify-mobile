@@ -234,14 +234,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                                               maxLines: 1,
                                                               overflow: TextOverflow.ellipsis),
                                                           if (resumeProvider.resumeUrl != null)
-                                                            Text(
-                                                                resumeProvider.resumeUrl!,
-                                                                style: appStyle(
-                                                                    8,
-                                                                    Colors.green.shade700,
-                                                                    FontWeight.w500),
-                                                                maxLines: 2,
-                                                                overflow: TextOverflow.ellipsis)
+                                                            GestureDetector(
+                                                              onTap: () {
+                                                                resumeProvider.downloadResume();
+                                                              },
+                                                              child: Text(
+                                                                  resumeProvider.resumeUrl!,
+                                                                  style: appStyle(
+                                                                      8,
+                                                                      Colors.blue.shade700,
+                                                                      FontWeight.w600),
+                                                                  maxLines: 2,
+                                                                  overflow: TextOverflow.ellipsis),
+                                                            )
                                                           else
                                                             Text(
                                                                 "Please make sure to upload your resume in PDF format",
