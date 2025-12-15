@@ -37,15 +37,15 @@ class _EditJobsState extends State<EditJobs> {
       TextEditingController(text: editable.description);
   TextEditingController imageUrl = TextEditingController();
   TextEditingController requirements1 =
-      TextEditingController(text: editable.requirements[0]);
+      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 0 ? editable.requirements[0] : "");
   TextEditingController requirements2 =
-      TextEditingController(text: editable.requirements[1]);
+      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 1 ? editable.requirements[1] : "");
   TextEditingController requirements3 =
-      TextEditingController(text: editable.requirements[2]);
+      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 2 ? editable.requirements[2] : "");
   TextEditingController requirements4 =
-      TextEditingController(text: editable.requirements[3]);
+      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 3 ? editable.requirements[3] : "");
   TextEditingController requirements5 =
-      TextEditingController(text: editable.requirements[4]);
+      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 4 ? editable.requirements[4] : "");
 
   @override
   Widget build(BuildContext context) {

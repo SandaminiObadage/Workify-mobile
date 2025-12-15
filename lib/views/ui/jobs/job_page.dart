@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
+import 'package:jobhubv2_0/controllers/agents_provider.dart';
+import 'package:jobhubv2_0/controllers/chat_provider.dart';
 import 'package:jobhubv2_0/controllers/jobs_provider.dart';
 import 'package:jobhubv2_0/controllers/login_provider.dart';
 import 'package:jobhubv2_0/controllers/zoom_provider.dart';
 import 'package:jobhubv2_0/models/request/applied/applied.dart';
 import 'package:jobhubv2_0/models/request/bookmarks/bookmarks_model.dart';
 import 'package:jobhubv2_0/models/response/jobs/get_job.dart';
-import 'package:jobhubv2_0/services/firebase_services.dart';
 import 'package:jobhubv2_0/services/helpers/applied_helper.dart';
 import 'package:jobhubv2_0/services/helpers/jobs_helper.dart';
 import 'package:jobhubv2_0/views/common/BackBtn.dart';
@@ -18,6 +19,7 @@ import 'package:jobhubv2_0/views/common/exports.dart';
 import 'package:jobhubv2_0/views/common/height_spacer.dart';
 import 'package:jobhubv2_0/views/common/pages_loader.dart';
 import 'package:jobhubv2_0/views/common/styled_container.dart';
+import 'package:jobhubv2_0/views/ui/chat/chat_page.dart';
 import 'package:jobhubv2_0/views/ui/jobs/edit_jobs.dart';
 import 'package:jobhubv2_0/views/ui/mainscreen.dart';
 import 'package:provider/provider.dart';
@@ -62,27 +64,58 @@ class _JobPageState extends State<JobPage> {
     sender = prefs.getString('profile') ?? '';
   }
 
-  FirebaseServices services = FirebaseServices();
-
-  createChatRoom(Map<String, dynamic> jobDetails, List<String> users,
+  Future<void> createChatRoom(Map<String, dynamic> jobDetails, List<String> users,
       String chatRoomId, messageType) async {
-    Map<String, dynamic> chatData = {
-      'users': users,
-      'chatRoomId': chatRoomId,
-      'read': false,
-      'job': jobDetails,
-      'profile': profile,
-      'sender': sender,
-      'name': username,
-      'agentName': widget.agentName,
-      'messageType': messageType,
-      'lastChat':
-          "Good Morning! Sir. I'm interested in this job. Please let me know if you have any questions. Thank you!",
-      'lastChatTime': DateTime.now()
-    };
-    services.createChatRoom(
-      chatData: chatData,
+    
+    // Get receiver (the agent/company - not current user)
+    String receiver = '';
+    for (var user in users) {
+      if (user != userUid) {
+        receiver = user;
+        break;
+      }
+    }
+
+    if (receiver.isEmpty) {
+      print('Error: No receiver found');
+      return;
+    }
+
+    // Create participants list
+    List<dynamic> participants = [
+      {
+        'userId': userUid,
+        'username': username,
+        'profile': sender
+      },
+      {
+        'userId': receiver,
+        'username': widget.agentName,
+        'profile': jobDetails['image_url'] ?? ''
+      }
+    ];
+
+    // Use chat provider to create chat room
+    final chatNotifier = Provider.of<ChatNotifier>(context, listen: false);
+    final result = await chatNotifier.createChatRoom(
+      chatRoomId: chatRoomId,
+      participants: participants,
+      receiver: receiver,
     );
+
+    if (result != null) {
+      // Optionally send initial message
+      await chatNotifier.sendMessage(
+        chatRoomId: chatRoomId,
+        receiver: receiver,
+        message: "Good Morning! Sir. I'm interested in this job. Please let me know if you have any questions. Thank you!",
+        senderName: username,
+        senderProfile: sender,
+        messageType: 'text',
+      );
+      
+      print('Chat room created successfully');
+    }
   }
 
   @override
@@ -267,62 +300,125 @@ class _JobPageState extends State<JobPage> {
                               alignment: Alignment.bottomCenter,
                               child: Padding(
                                 padding: EdgeInsets.only(bottom: 20.h),
-                                child: CustomOutlineBtn(
-                                    onTap: _isApplying ? null : () async {
-                                      if (_isApplying) return; // Prevent multiple taps
-                                      
-                                      setState(() {
-                                        _isApplying = true;
-                                      });
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CustomOutlineBtn(
+                                        onTap: () async {
+                                          if (loggedIn == false) {
+                                            Get.snackbar(
+                                              "Login required",
+                                              "Please login to start a chat",
+                                              backgroundColor: Colors.red,
+                                              colorText: Colors.white,
+                                            );
+                                            return;
+                                          }
 
-                                      try {
-                                        // Skip Firebase chat for now since it's causing permission errors
-                                        // Apply for the job directly
-                                        AppliedPost model = AppliedPost(job: job.id);
-                                        bool success = await AppliedHelper.applyJob(model);
-                                        
-                                        if (success) {
-                                          zoomNotifier.currentIndex = 1;
-                                          Get.snackbar(
-                                            "Success", 
-                                            "Job application submitted successfully!",
-                                            backgroundColor: Colors.green,
-                                            colorText: Colors.white,
+                                          final chatNotifier = Provider.of<ChatNotifier>(context, listen: false);
+                                          final agentsNotifier = Provider.of<AgentsNotifier>(context, listen: false);
+
+                                          final chatRoomId = '${job.id}_${userUid}_${job.agentId}';
+                                          final participants = [
+                                            {
+                                              'userId': userUid,
+                                              'username': username,
+                                              'profile': sender
+                                            },
+                                            {
+                                              'userId': job.agentId,
+                                              'username': widget.agentName,
+                                              'profile': job.imageUrl
+                                            }
+                                          ];
+
+                                          final jobDetails = {
+                                            'company': job.company,
+                                            'title': job.title,
+                                            'salary': job.salary,
+                                            'image_url': job.imageUrl,
+                                          };
+
+                                          final result = await chatNotifier.createChatRoom(
+                                            chatRoomId: chatRoomId,
+                                            participants: participants,
+                                            receiver: job.agentId,
                                           );
-                                          Get.to(() => const MainScreen());
-                                        } else {
-                                          Get.snackbar(
-                                            "Error", 
-                                            "Failed to submit application. Please try again.",
-                                            backgroundColor: Colors.red,
-                                            colorText: Colors.white,
-                                          );
-                                        }
-                                      } catch (e) {
-                                        print('Error applying for job: $e');
-                                        Get.snackbar(
-                                          "Error", 
-                                          "An error occurred. Please try again.",
-                                          backgroundColor: Colors.red,
-                                          colorText: Colors.white,
-                                        );
-                                      } finally {
-                                        if (mounted) {
+
+                                          final chatData = <String, dynamic>{
+                                            'chatRoomId': chatRoomId,
+                                            'participants': participants,
+                                            'job': jobDetails,
+                                            ...?result,
+                                          };
+
+                                          agentsNotifier.chat = chatData;
+                                          Get.to(() => const ChatPage());
+                                        },
+                                        color2: const Color(0xFF3281E3),
+                                        width: width,
+                                        hieght: hieght * 0.06,
+                                        text: loggedIn == false
+                                            ? "Please login to chat"
+                                            : "Message Agent",
+                                        color: Color(kLight.value)),
+                                    const SizedBox(height: 12),
+                                    CustomOutlineBtn(
+                                        onTap: _isApplying ? null : () async {
+                                          if (_isApplying) return; // Prevent multiple taps
+                                          
                                           setState(() {
-                                            _isApplying = false;
+                                            _isApplying = true;
                                           });
-                                        }
-                                      }
-                                    },
-                                    color2: Color(kOrange.value),
-                                    width: width,
-                                    hieght: hieght * 0.06,
-                                    text: loggedIn == false
-                                        ? "Please login to apply"
-                                        : _isApplying 
-                                          ? "Applying..."
-                                          : "Apply Now",
-                                    color: Color(kLight.value)),
+
+                                          try {
+                                            AppliedPost model = AppliedPost(job: job.id);
+                                            bool success = await AppliedHelper.applyJob(model);
+                                            
+                                            if (success) {
+                                              zoomNotifier.currentIndex = 1;
+                                              Get.snackbar(
+                                                "Success", 
+                                                "Job application submitted successfully!",
+                                                backgroundColor: Colors.green,
+                                                colorText: Colors.white,
+                                              );
+                                              Get.to(() => const MainScreen());
+                                            } else {
+                                              Get.snackbar(
+                                                "Error", 
+                                                "Failed to submit application. Please try again.",
+                                                backgroundColor: Colors.red,
+                                                colorText: Colors.white,
+                                              );
+                                            }
+                                          } catch (e) {
+                                            print('Error applying for job: $e');
+                                            Get.snackbar(
+                                              "Error", 
+                                              "An error occurred. Please try again.",
+                                              backgroundColor: Colors.red,
+                                              colorText: Colors.white,
+                                            );
+                                          } finally {
+                                            if (mounted) {
+                                              setState(() {
+                                                _isApplying = false;
+                                              });
+                                            }
+                                          }
+                                        },
+                                        color2: Color(kOrange.value),
+                                        width: width,
+                                        hieght: hieght * 0.06,
+                                        text: loggedIn == false
+                                            ? "Please login to apply"
+                                            : _isApplying 
+                                              ? "Applying..."
+                                              : "Apply Now",
+                                        color: Color(kLight.value)),
+                                  ],
+                                ),
                               ),
                             ): Align(
                               alignment: Alignment.bottomCenter,

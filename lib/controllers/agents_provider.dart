@@ -13,11 +13,21 @@ class AgentsNotifier extends ChangeNotifier {
   late Future<List<JobsResponse>> jobsList;
   late Future<List<Applied>> appliedList;
   late Future<GetAgent> getAgent;
+  
+  // Cache agents to avoid refetching on every rebuild
+  Future<List<Agents>>? _cachedAgentsList;
 
   Future<List<Agents>> getAgents() {
-    agentsList = AngenciesHelper.getsAgents();
+    // Return cached future if it already exists
+    if (_cachedAgentsList != null) {
+      return _cachedAgentsList!;
+    }
+    
+    // Otherwise fetch and cache
+    _cachedAgentsList = AngenciesHelper.getsAgents();
+    agentsList = _cachedAgentsList!;
 
-    return agentsList;
+    return _cachedAgentsList!;
   }
 
   Future<List<JobsResponse>> getJobsList(String agentId) {

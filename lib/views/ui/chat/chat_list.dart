@@ -1,5 +1,4 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
@@ -8,7 +7,6 @@ import 'package:jobhubv2_0/controllers/chat_provider.dart';
 import 'package:jobhubv2_0/controllers/login_provider.dart';
 import 'package:jobhubv2_0/controllers/zoom_provider.dart';
 import 'package:jobhubv2_0/models/request/agents/agents.dart';
-import 'package:jobhubv2_0/services/firebase_services.dart';
 import 'package:jobhubv2_0/utils/date.dart';
 import 'package:jobhubv2_0/views/common/drawer/drawer_widget.dart';
 import 'package:jobhubv2_0/views/common/exports.dart';
@@ -17,6 +15,7 @@ import 'package:jobhubv2_0/views/ui/agent/agent_page.dart';
 import 'package:jobhubv2_0/views/ui/auth/NonUser.dart';
 import 'package:jobhubv2_0/views/ui/chat/chat_page.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatsList extends StatefulWidget {
   const ChatsList({super.key});
@@ -34,12 +33,15 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
   String imageUrl =
       'https://ui-avatars.com/api/?name=Chat&background=0D8ABC&color=fff&size=128';
 
-  FirebaseServices _services = FirebaseServices();
-
-  final Stream<QuerySnapshot> _chats = FirebaseFirestore.instance
-      .collection('chats')
-      .where('users', arrayContains: userUid)
-      .snapshots();
+  @override
+  void initState() {
+    super.initState();
+    // Start fetching chats when the widget is created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chatNotifier = Provider.of<ChatNotifier>(context, listen: false);
+      chatNotifier.fetchChatRooms();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,53 +191,90 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
                               topRight: Radius.circular(20)),
                           color: Color(0xFFEFFFFC),
                         ),
-                        child: StreamBuilder<QuerySnapshot>(
-                          stream: _chats,
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError) {
-                              return const Text('Something went wrong');
-                            }
-
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
+                        child: Consumer<ChatNotifier>(
+                          builder: (context, chatNotifier, child) {
+                            if (chatNotifier.isLoading && chatNotifier.chatRooms.isEmpty) {
                               return Center(
                                 child: Image.asset('assets/images/loader.gif'),
                               );
                             }
-                            if (snapshot.data?.docs.isEmpty == true) {
+
+                            if (chatNotifier.error.isNotEmpty && chatNotifier.chatRooms.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  'Error loading chats',
+                                  style: appStyle(14, Colors.red, FontWeight.normal),
+                                ),
+                              );
+                            }
+
+                            if (chatNotifier.chatRooms.isEmpty) {
                               return const NoSearchResults(
                                 text: 'Apply For Jobs To View Chats',
                               );
                             }
-                            final chatList = snapshot.data!.docs;
+
+                            final chatList = chatNotifier.chatRooms;
                             return ListView.builder(
                                 itemCount: chatList.length,
                                 padding: const EdgeInsets.only(left: 25),
                                 shrinkWrap: true,
                                 itemBuilder: (BuildContext context, int index) {
-                                  final chat = chatList[index].data()
-                                      as Map<String, dynamic>;
-                                  Timestamp lastChatTime = chat['lastChatTime'];
-                                  DateTime lastChatDateTime =
-                                      lastChatTime.toDate();
+                                  final chat = chatList[index] as Map<String, dynamic>;
+                                  
+                                  // Parse lastMessageTime
+                                  DateTime lastChatDateTime;
+                                  try {
+                                    if (chat['lastMessageTime'] is String) {
+                                      lastChatDateTime = DateTime.parse(chat['lastMessageTime']);
+                                    } else {
+                                      lastChatDateTime = DateTime.now();
+                                    }
+                                  } catch (e) {
+                                    lastChatDateTime = DateTime.now();
+                                  }
+
+                                  // Get the other participant's info
+                                  final participants = chat['participants'] as List<dynamic>? ?? [];
+                                  String displayName = 'Unknown';
+                                  String displayProfile = '';
+                                  
+                                  for (var participant in participants) {
+                                    if (participant['userId'] != userUid) {
+                                      displayName = participant['username'] ?? 'Unknown';
+                                      displayProfile = participant['profile'] ?? '';
+                                      break;
+                                    }
+                                  }
+
+                                  // Check if there are unread messages
+                                  final unreadCount = chat['unreadCount'] is Map 
+                                      ? (chat['unreadCount'][userUid] ?? 0)
+                                      : 0;
+
                                   return Consumer<AgentsNotifier>(
                                     builder: (context, agentsNotifier, child) {
                                       return GestureDetector(
                                         onTap: () {
+                                          // Mark as read when opening
                                           if (chat['sender'] != userUid) {
-                                            _services.updateCount(
-                                                chat['chatRoomId']);
-                                          } else {}
-                                          agentsNotifier.chat = chat;
+                                            chatNotifier.markAsRead(chat['chatRoomId']);
+                                          }
+                                          final enrichedChat = Map<String, dynamic>.from(chat);
+                                          enrichedChat['job'] ??= {
+                                            'company': displayName,
+                                            'title': 'Chat',
+                                            'salary': '',
+                                            'image_url': displayProfile,
+                                          };
+                                          agentsNotifier.chat = enrichedChat;
                                           Get.to(() => const ChatPage());
                                         },
                                         child: buildConversationRow(
-                                            name == chat['name']
-                                                ? chat['agentName']
-                                                : chat['name'],
-                                            chat['lastChat'],
-                                            chat['profile'],
-                                            chat['read'] == false ? 1 : 0,
+                                            displayName,
+                                            chat['lastMessage'] ?? '',
+                                            displayProfile,
+                                            unreadCount,
                                             lastChatDateTime),
                                       );
                                     },
@@ -267,9 +306,9 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  "Agencies and Companies",
-                                  style: TextStyle(color: Colors.white),
+                                ReusableText(
+                                  text: "Agencies and Companies",
+                                  style: appStyle(12, Colors.white, FontWeight.normal),
                                 ),
                                 IconButton(
                                     onPressed: () {},
@@ -279,21 +318,78 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
                                     )),
                               ],
                             ),
-                            SizedBox(
-                              height: 90,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                children: [
-                                  buildContactAvatar('Alla', imageUrl),
-                                  buildContactAvatar('July', imageUrl),
-                                  buildContactAvatar('Mikle', imageUrl),
-                                  buildContactAvatar('Kler', imageUrl),
-                                  buildContactAvatar('Moane', imageUrl),
-                                  buildContactAvatar('Julie', imageUrl),
-                                  buildContactAvatar('Allen', imageUrl),
-                                  buildContactAvatar('John', imageUrl),
-                                ],
-                              ),
+                            Consumer<AgentsNotifier>(
+                              builder: (context, agentsNotifier, child) {
+                                var agents = agentsNotifier.getAgents();
+                                return FutureBuilder<List<Agents>>(
+                                    future: agents,
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return SizedBox(
+                                          height: 90,
+                                          child: ListView.builder(
+                                              itemCount: 7,
+                                              scrollDirection: Axis.horizontal,
+                                              itemBuilder: (context, index) {
+                                                return buildContactAvatar(
+                                                    'Agent ${index}', imageUrl);
+                                              }),
+                                        );
+                                      } else if (snapshot.hasError) {
+                                        return Text("Error ${snapshot.error}");
+                                      } else {
+                                        return SizedBox(
+                                          height: 90,
+                                          child: ListView.builder(
+                                            itemCount: snapshot.data!.length,
+                                            scrollDirection: Axis.horizontal,
+                                            itemBuilder: (context, index) {
+                                              var agent = snapshot.data![index];
+                                              return Consumer<AgentsNotifier>(
+                                                  builder: (context,
+                                                      agentsNotifier, child) {
+                                                return GestureDetector(
+                                                  onTap: () async {
+                                                    // Create/start chat with agent
+                                                    final prefs = await SharedPreferences.getInstance();
+                                                    final myUsername = prefs.getString('username') ?? 'User';
+                                                    final myProfile = prefs.getString('profile') ?? '';
+                                                    
+                                                    final chatRoomId = '${userUid}_${agent.uid}';
+                                                    final participants = [
+                                                      {
+                                                        'userId': userUid,
+                                                        'username': myUsername,
+                                                        'profile': myProfile
+                                                      },
+                                                      {
+                                                        'userId': agent.uid,
+                                                        'username': agent.username,
+                                                        'profile': agent.profile
+                                                      }
+                                                    ];
+                                                    
+                                                    final chatData = {
+                                                      'chatRoomId': chatRoomId,
+                                                      'participants': participants,
+                                                      'job': null
+                                                    };
+                                                    
+                                                    agentsNotifier.chat = chatData;
+                                                    Get.to(() => const ChatPage());
+                                                  },
+                                                  child: buildContactAvatar(
+                                                      agent.username,
+                                                      agent.profile),
+                                                );
+                                              });
+                                            },
+                                          ),
+                                        );
+                                      }
+                                    });
+                              },
                             )
                           ],
                         ),
@@ -312,46 +408,91 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
                                 topRight: Radius.circular(20)),
                             color: Color(0xFFEFFFFC),
                           ),
-                          child: ListView(
-                            padding: const EdgeInsets.only(left: 25),
-                            children: [
-                              buildConversationRow(
-                                  'Laura',
-                                  'Hello, how are you',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                              buildConversationRow('Kalya', 'Will you visit me',
-                                  imageUrl, 2, DateTime.now()),
-                              buildConversationRow('Mary', 'I ate your ...',
-                                  imageUrl, 6, DateTime.now()),
-                              buildConversationRow(
-                                  'Hellen',
-                                  'Are you with Kayla again',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                              buildConversationRow(
-                                  'Louren',
-                                  'Barrow money please',
-                                  imageUrl,
-                                  3,
-                                  DateTime.now()),
-                              buildConversationRow('Tom', 'Hey, whatsup',
-                                  imageUrl, 0, DateTime.now()),
-                              buildConversationRow(
-                                  'Laura',
-                                  'Helle, how are you',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                              buildConversationRow(
-                                  'Laura',
-                                  'Helle, how are you',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                            ],
+                          child: Consumer<ChatNotifier>(
+                            builder: (context, chatNotifier, child) {
+                              if (chatNotifier.isLoading && chatNotifier.chatRooms.isEmpty) {
+                                return Center(
+                                  child: Image.asset('assets/images/loader.gif'),
+                                );
+                              }
+
+                              if (chatNotifier.error.isNotEmpty && chatNotifier.chatRooms.isEmpty) {
+                                return Center(
+                                  child: Text(
+                                    'Error loading chats',
+                                    style: appStyle(14, Colors.red, FontWeight.normal),
+                                  ),
+                                );
+                              }
+
+                              if (chatNotifier.chatRooms.isEmpty) {
+                                return const NoSearchResults(
+                                  text: 'No online chats yet',
+                                );
+                              }
+
+                              final chatList = chatNotifier.chatRooms;
+                              return ListView.builder(
+                                  itemCount: chatList.length,
+                                  padding: const EdgeInsets.only(left: 25),
+                                  shrinkWrap: true,
+                                  itemBuilder: (BuildContext context, int index) {
+                                    final chat = chatList[index] as Map<String, dynamic>;
+
+                                    DateTime lastChatDateTime;
+                                    try {
+                                      if (chat['lastMessageTime'] is String) {
+                                        lastChatDateTime = DateTime.parse(chat['lastMessageTime']);
+                                      } else {
+                                        lastChatDateTime = DateTime.now();
+                                      }
+                                    } catch (e) {
+                                      lastChatDateTime = DateTime.now();
+                                    }
+
+                                    final participants = chat['participants'] as List<dynamic>? ?? [];
+                                    String displayName = 'Unknown';
+                                    String displayProfile = '';
+                                    for (var participant in participants) {
+                                      if (participant['userId'] != userUid) {
+                                        displayName = participant['username'] ?? 'Unknown';
+                                        displayProfile = participant['profile'] ?? '';
+                                        break;
+                                      }
+                                    }
+
+                                    final unreadCount = chat['unreadCount'] is Map
+                                        ? (chat['unreadCount'][userUid] ?? 0)
+                                        : 0;
+
+                                    return Consumer<AgentsNotifier>(
+                                      builder: (context, agentsNotifier, child) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            if (chat['sender'] != userUid) {
+                                              chatNotifier.markAsRead(chat['chatRoomId']);
+                                            }
+                                            final enrichedChat = Map<String, dynamic>.from(chat);
+                                            enrichedChat['job'] ??= {
+                                              'company': displayName,
+                                              'title': 'Chat',
+                                              'salary': '',
+                                              'image_url': displayProfile,
+                                            };
+                                            agentsNotifier.chat = enrichedChat;
+                                            Get.to(() => const ChatPage());
+                                          },
+                                          child: buildConversationRow(
+                                              displayName,
+                                              chat['lastMessage'] ?? '',
+                                              displayProfile,
+                                              unreadCount,
+                                              lastChatDateTime),
+                                        );
+                                      },
+                                    );
+                                  });
+                            },
                           ),
                         ))
                   ],
@@ -376,9 +517,9 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  "Agencies and Companies",
-                                  style: TextStyle(color: Colors.white),
+                                ReusableText(
+                                  text: "Agencies and Companies",
+                                  style: appStyle(12, Colors.white, FontWeight.normal),
                                 ),
                                 IconButton(
                                     onPressed: () {},
@@ -388,21 +529,55 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
                                     )),
                               ],
                             ),
-                            SizedBox(
-                              height: 90,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                children: [
-                                  buildContactAvatar('Alla', imageUrl),
-                                  buildContactAvatar('July', imageUrl),
-                                  buildContactAvatar('Mikle', imageUrl),
-                                  buildContactAvatar('Kler', imageUrl),
-                                  buildContactAvatar('Moane', imageUrl),
-                                  buildContactAvatar('Julie', imageUrl),
-                                  buildContactAvatar('Allen', imageUrl),
-                                  buildContactAvatar('John', imageUrl),
-                                ],
-                              ),
+                            Consumer<AgentsNotifier>(
+                              builder: (context, agentsNotifier, child) {
+                                var agents = agentsNotifier.getAgents();
+                                return FutureBuilder<List<Agents>>(
+                                    future: agents,
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return SizedBox(
+                                          height: 90,
+                                          child: ListView.builder(
+                                              itemCount: 7,
+                                              scrollDirection: Axis.horizontal,
+                                              itemBuilder: (context, index) {
+                                                return buildContactAvatar(
+                                                    'Agent ${index}', imageUrl);
+                                              }),
+                                        );
+                                      } else if (snapshot.hasError) {
+                                        return Text("Error ${snapshot.error}");
+                                      } else {
+                                        return SizedBox(
+                                          height: 90,
+                                          child: ListView.builder(
+                                            itemCount: snapshot.data!.length,
+                                            scrollDirection: Axis.horizontal,
+                                            itemBuilder: (context, index) {
+                                              var agent = snapshot.data![index];
+                                              return Consumer<AgentsNotifier>(
+                                                  builder: (context,
+                                                      agentsNotifier, child) {
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    agentsNotifier.agent =
+                                                        agent;
+                                                    Get.to(() =>
+                                                        const AgentDetails());
+                                                  },
+                                                  child: buildContactAvatar(
+                                                      agent.username,
+                                                      agent.profile),
+                                                );
+                                              });
+                                            },
+                                          ),
+                                        );
+                                      }
+                                    });
+                              },
                             )
                           ],
                         ),
@@ -421,46 +596,11 @@ class _ChatsListState extends State<ChatsList> with TickerProviderStateMixin {
                                 topRight: Radius.circular(20)),
                             color: Color(0xFFEFFFFC),
                           ),
-                          child: ListView(
-                            padding: const EdgeInsets.only(left: 25),
-                            children: [
-                              buildConversationRow(
-                                  'Laura',
-                                  'Hello, how are you',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                              buildConversationRow('Kalya', 'Will you visit me',
-                                  imageUrl, 2, DateTime.now()),
-                              buildConversationRow('Mary', 'I ate your ...',
-                                  imageUrl, 6, DateTime.now()),
-                              buildConversationRow(
-                                  'Hellen',
-                                  'Are you with Kayla again',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                              buildConversationRow(
-                                  'Louren',
-                                  'Barrow money please',
-                                  imageUrl,
-                                  3,
-                                  DateTime.now()),
-                              buildConversationRow('Tom', 'Hey, whatsup',
-                                  imageUrl, 0, DateTime.now()),
-                              buildConversationRow(
-                                  'Laura',
-                                  'Helle, how are you',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                              buildConversationRow(
-                                  'Laura',
-                                  'Helle, how are you',
-                                  imageUrl,
-                                  0,
-                                  DateTime.now()),
-                            ],
+                          child: const Center(
+                            child: Text(
+                              'Online chat coming soon',
+                              style: TextStyle(color: Colors.black54),
+                            ),
                           ),
                         ))
                   ],

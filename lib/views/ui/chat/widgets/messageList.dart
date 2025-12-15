@@ -1,12 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:jobhubv2_0/constants/app_constants.dart';
-import 'package:jobhubv2_0/services/firebase_services.dart';
+import 'package:jobhubv2_0/controllers/chat_provider.dart';
 import 'package:jobhubv2_0/utils/date.dart';
 import 'package:jobhubv2_0/views/common/app_style.dart';
 import 'package:jobhubv2_0/views/common/loader.dart';
 import 'package:jobhubv2_0/views/ui/chat/widgets/chat_left_item.dart';
 import 'package:jobhubv2_0/views/ui/chat/widgets/chat_right_item.dart';
+import 'package:provider/provider.dart';
 
 class MessageList extends StatefulWidget {
   final String chatRoomId;
@@ -17,7 +17,6 @@ class MessageList extends StatefulWidget {
 }
 
 class _MessageListState extends State<MessageList> {
-  FirebaseServices _services = FirebaseServices();
   late ScrollController _msgScrolling;
   bool spacing = true;
 
@@ -35,75 +34,93 @@ class _MessageListState extends State<MessageList> {
 
   @override
   Widget build(BuildContext context) {
-    final Stream<QuerySnapshot> _messages = FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatRoomId)
-        .collection('messages')
-        .orderBy('time')
-        .snapshots();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: _messages,
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.hasError) {
-            return const Text('Something went wrong');
+      child: Consumer<ChatNotifier>(
+        builder: (context, chatNotifier, child) {
+          if (chatNotifier.isLoading && chatNotifier.messages.isEmpty) {
+            return Center(
+              child: Image.asset('assets/images/loader.gif'),
+            );
           }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return SizedBox.fromSize();
+          if (chatNotifier.error.isNotEmpty && chatNotifier.messages.isEmpty) {
+            return Center(
+              child: Text(
+                'Error loading messages',
+                style: appStyle(14, Colors.red, FontWeight.normal),
+              ),
+            );
           }
-          if (snapshot.data?.docs.isEmpty == true) {
+
+          if (chatNotifier.messages.isEmpty) {
             return const NoSearchResults(
               text: 'Be the first to send a message',
             );
           }
-          return snapshot.hasData
-              ? Column(
-                  children: [
-                    Container(
-                      height: hieght * .66,
-                      padding: const EdgeInsets.all(8.0),
-                      child: ListView.builder(
-                          itemCount: snapshot.data?.docs.length,
-                          // reverse: true,
-                          controller: _msgScrolling,
-                          itemBuilder: (BuildContext context, index) {
-                            
-                            var message = snapshot.data!.docs[index];
 
-                            // var newLength = snapshot.data!.docs.length + 1;
-                            Timestamp lastChatTime = message['time'];
-                            DateTime lastChatDateTime = lastChatTime.toDate();
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    duTimeLineFormat(lastChatDateTime),
-                                    style: appStyle(
-                                        10, Colors.grey, FontWeight.normal),
-                                  ),
-                                  message['sender'] == userUid
-                                      ? ChatRightItem(
-                                          message['messageType'],
-                                          message['message'],
-                                          message['profile'])
-                                      : ChatLeftItem(
-                                          message['messageType'],
-                                          message['message'],
-                                          message['profile']),
-                                ],
-                              ),
-                            );
-                          }),
-                    ),
-                    Container(
-                      height: 70,
-                    )
-                  ],
-                )
-              : Container();
+          // Scroll to bottom when new messages arrive
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_msgScrolling.hasClients) {
+              _msgScrolling.animateTo(
+                _msgScrolling.position.maxScrollExtent,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          });
+
+          return Column(
+            children: [
+              Container(
+                height: hieght * .66,
+                padding: const EdgeInsets.all(8.0),
+                child: ListView.builder(
+                  itemCount: chatNotifier.messages.length,
+                  controller: _msgScrolling,
+                  itemBuilder: (BuildContext context, index) {
+                    var message = chatNotifier.messages[index];
+
+                    // Parse message time
+                    DateTime messageTime;
+                    try {
+                      if (message['time'] is String) {
+                        messageTime = DateTime.parse(message['time']);
+                      } else {
+                        messageTime = DateTime.now();
+                      }
+                    } catch (e) {
+                      messageTime = DateTime.now();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            duTimeLineFormat(messageTime),
+                            style: appStyle(10, Colors.grey, FontWeight.normal),
+                          ),
+                          message['sender'] == userUid
+                              ? ChatRightItem(
+                                  message['messageType'] ?? 'text',
+                                  message['message'] ?? '',
+                                  message['senderProfile'] ?? '')
+                              : ChatLeftItem(
+                                  message['messageType'] ?? 'text',
+                                  message['message'] ?? '',
+                                  message['senderProfile'] ?? ''),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Container(
+                height: 70,
+              )
+            ],
+          );
         },
       ),
     );

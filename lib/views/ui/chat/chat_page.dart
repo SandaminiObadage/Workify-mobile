@@ -1,12 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:jobhubv2_0/constants/app_constants.dart';
 import 'package:jobhubv2_0/controllers/agents_provider.dart';
 import 'package:jobhubv2_0/controllers/chat_provider.dart';
 import 'package:jobhubv2_0/controllers/image_provider.dart';
-import 'package:jobhubv2_0/services/firebase_services.dart';
 import 'package:jobhubv2_0/views/common/BackBtn.dart';
 import 'package:jobhubv2_0/views/common/app_style.dart';
 import 'package:jobhubv2_0/views/common/reusable_text.dart';
@@ -14,6 +12,7 @@ import 'package:jobhubv2_0/views/ui/auth/profile.dart';
 import 'package:jobhubv2_0/views/ui/chat/widgets/messageList.dart';
 import 'package:jobhubv2_0/views/ui/chat/widgets/textfield.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -26,49 +25,115 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
-  FirebaseServices _services = FirebaseServices();
 
   TextEditingController _messageController = TextEditingController();
   final FocusNode _messageFocusNode = FocusNode();
   String imageUrl =
       'https://ui-avatars.com/api/?name=ChatUser&background=0D8ABC&color=fff&size=128';
+  String? _username;
+  String? _userProfile;
+  String? _receiverName;
+  String? _receiverProfile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    // Start polling messages when the page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chatNotifier = Provider.of<ChatNotifier>(context, listen: false);
+      final agentsNotifier = Provider.of<AgentsNotifier>(context, listen: false);
+      final chat = agentsNotifier.chat;
+      final chatRoomId = chat['chatRoomId'];
+
+      // Resolve receiver info from participants
+      final participants = chat['participants'] as List<dynamic>? ?? [];
+      for (var participant in participants) {
+        if (participant['userId'] != userUid) {
+          _receiverName = participant['username'] ?? 'Chat';
+          _receiverProfile = participant['profile'] ?? '';
+          break;
+        }
+      }
+
+      chatNotifier.startMessagePolling(chatRoomId);
+      chatNotifier.markAsRead(chatRoomId);
+    });
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _username = prefs.getString('username') ?? 'User';
+      _userProfile = prefs.getString('profile') ?? '';
+    });
+  }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    final chatNotifier = Provider.of<ChatNotifier>(context, listen: false);
+    chatNotifier.stopPolling();
     super.dispose();
   }
 
 
-  sendMessage() {
+  Future<void> sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+
     var chat = Provider.of<AgentsNotifier>(context, listen: false).chat;
+    var chatNotifier = Provider.of<ChatNotifier>(context, listen: false);
 
-    Map<String, dynamic> message = {
-      'message': _messageController.text,
-      'messageType': 'text',
-      'profile': profile,
-      'sender': userUid,
-      'time': DateTime.now()
-    };
+    // Get receiver info from participants
+    String receiver = '';
+    final participants = chat['participants'] as List<dynamic>? ?? [];
+    for (var participant in participants) {
+      if (participant['userId'] != userUid) {
+        receiver = participant['userId'];
+        break;
+      }
+    }
 
-    _services.createChat(chat['chatRoomId'], message);
-    _messageController.clear();
-    FocusScope.of(context).unfocus();
+    if (receiver.isEmpty) {
+      print('Error: No receiver found');
+      return;
+    }
+
+    final success = await chatNotifier.sendMessage(
+      chatRoomId: chat['chatRoomId'],
+      receiver: receiver,
+      message: _messageController.text,
+      senderName: _username ?? 'User',
+      senderProfile: _userProfile ?? '',
+      messageType: 'text',
+    );
+
+    if (success) {
+      _messageController.clear();
+      FocusScope.of(context).unfocus();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     var imageNotifier = Provider.of<ImageUpoader>(context);
     var chatNotifier = Provider.of<ChatNotifier>(context);
+    var agentsNotifier = Provider.of<AgentsNotifier>(context);
 
-    String chatRoomId =
-        Provider.of<AgentsNotifier>(context, listen: false).chat['chatRoomId'];
+    String chatRoomId = agentsNotifier.chat['chatRoomId'];
 
-    final Stream<QuerySnapshot> _typingStatus = FirebaseFirestore.instance
-        .collection('typing')
-        .doc(chatRoomId)
-        .collection('typing')
-        .snapshots();
+    final participants = agentsNotifier.chat['participants'] as List<dynamic>? ?? [];
+    String receiverName = _receiverName ?? 'Chat';
+    String receiverProfile = _receiverProfile ?? imageUrl;
+    for (var participant in participants) {
+      if (participant['userId'] != userUid) {
+        receiverName = participant['username'] ?? receiverName;
+        receiverProfile = participant['profile']?.toString().isNotEmpty == true
+            ? participant['profile']
+            : receiverProfile;
+        break;
+      }
+    }
 
     return Scaffold(
         backgroundColor: Color(kLight.value),
@@ -89,62 +154,41 @@ class _ChatPageState extends State<ChatPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      StreamBuilder<QuerySnapshot>(
-                          stream: _typingStatus,
-                          builder: (BuildContext context,
-                              AsyncSnapshot<QuerySnapshot> snapshot) {
-                            if (snapshot.hasError) {
-                              return const Text('Something went wrong');
-                            }
-
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return SizedBox.fromSize();
-                            }
-                            if (snapshot.data?.docs.isEmpty == true) {
-                              return SizedBox.fromSize();
-                            }
-                            // Extract document IDs from the list of documents
-                            List<String> documentIds = snapshot.data!.docs
-                                .map((doc) => doc.id)
-                                .toList();
-
-                            return ReusableText(
-                              text: documentIds.isNotEmpty &&
-                                      !documentIds.contains(userUid)
-                                  ? "typing ..."
-                                  : "",
-                              style: appStyle(
-                                  9, Colors.black54, FontWeight.normal),
-                            );
-                          }),
                       ReusableText(
-                        text: 'online',
-                        style: appStyle(
-                            9, Colors.green.shade600, FontWeight.normal),
+                        text: receiverName,
+                        style:
+                            appStyle(11, Colors.black87, FontWeight.w600),
+                      ),
+                      Consumer<ChatNotifier>(
+                        builder: (context, chatNotifier, child) {
+                          final isTyping = chatNotifier.typingUsers.isNotEmpty;
+                          return ReusableText(
+                            text: isTyping ? "typing ..." : "online",
+                            style: appStyle(
+                                9, Colors.black54, FontWeight.normal),
+                          );
+                        },
                       ),
                     ],
                   ),
                   const SizedBox(
                     width: 10,
                   ),
-                  Consumer<AgentsNotifier>(
-                    builder: (context, agentNotifier, child) {
-                      return Stack(
-                        children: [
-                          CircleAvatar(
-                            backgroundImage:
-                                CachedNetworkImageProvider(imageUrl),
-                            radius: 15,
-                          ),
-                          Positioned(
-                            child: CircleAvatar(
-                                backgroundColor: Colors.green.shade600,
-                                radius: 4),
-                          )
-                        ],
-                      );
-                    },
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: CachedNetworkImageProvider(
+                            receiverProfile.isNotEmpty
+                                ? receiverProfile
+                                : imageUrl),
+                        radius: 15,
+                      ),
+                      Positioned(
+                        child: CircleAvatar(
+                            backgroundColor: Colors.green.shade600,
+                            radius: 4),
+                      )
+                    ],
                   )
                 ],
               ),
@@ -171,77 +215,91 @@ class _ChatPageState extends State<ChatPage> {
                       Consumer<AgentsNotifier>(
                         builder: (context, agentsNotifier, child) {
                           var jobDetails = agentsNotifier.chat['job'];
+                          final hasJob = jobDetails != null;
                           return Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        ReusableText(
-                                          text: "Company",
-                                          style: appStyle(10, Colors.white54,
-                                              FontWeight.w600),
-                                        ),
-                                        ReusableText(
-                                          text: 'Job Title',
-                                          style: appStyle(10, Colors.white54,
-                                              FontWeight.normal),
-                                        ),
-                                        ReusableText(
-                                          text: 'Salary',
-                                          style: appStyle(10, Colors.white54,
-                                              FontWeight.normal),
-                                        ),
-                                      ],
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 20.0),
-                                      child: Container(
-                                        height: 60,
-                                        width: 1,
-                                        color: Colors.amberAccent,
+                                if (hasJob)
+                                  Row(
+                                    children: [
+                                      Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          ReusableText(
+                                            text: "Company",
+                                            style: appStyle(10, Colors.white54,
+                                                FontWeight.w600),
+                                          ),
+                                          ReusableText(
+                                            text: 'Job Title',
+                                            style: appStyle(10, Colors.white54,
+                                                FontWeight.normal),
+                                          ),
+                                          ReusableText(
+                                            text: 'Salary',
+                                            style: appStyle(10, Colors.white54,
+                                                FontWeight.normal),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        ReusableText(
-                                          text: jobDetails['company'],
-                                          style: appStyle(10, Colors.white,
-                                              FontWeight.w600),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20.0),
+                                        child: Container(
+                                          height: 60,
+                                          width: 1,
+                                          color: Colors.amberAccent,
                                         ),
-                                        ReusableText(
-                                          text: jobDetails['title'],
-                                          style: appStyle(10, Colors.white,
-                                              FontWeight.normal),
-                                        ),
-                                        ReusableText(
-                                          text: jobDetails['salary'],
-                                          style: appStyle(10, Colors.white,
-                                              FontWeight.normal),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                      ),
+                                      Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          ReusableText(
+                                            text: jobDetails['company'] ?? receiverName,
+                                            style: appStyle(10, Colors.white,
+                                                FontWeight.w600),
+                                          ),
+                                          ReusableText(
+                                            text: jobDetails['title'] ?? 'Chat',
+                                            style: appStyle(10, Colors.white,
+                                                FontWeight.normal),
+                                          ),
+                                          ReusableText(
+                                            text: jobDetails['salary'] ?? '',
+                                            style: appStyle(10, Colors.white,
+                                                FontWeight.normal),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Row(
+                                    children: [
+                                      ReusableText(
+                                        text: receiverName,
+                                        style: appStyle(12, Colors.white,
+                                            FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
                                 const SizedBox(
                                   width: 20,
                                 ),
                                 CircularAvata(
                                     w: 50,
                                     h: 50,
-                                    image: jobDetails['image_url']),
+                                    image: hasJob
+                                        ? jobDetails['image_url'] ?? receiverProfile
+                                        : receiverProfile),
                               ],
                             ),
                           );
@@ -278,18 +336,23 @@ class _ChatPageState extends State<ChatPage> {
                               },
                               onTapOutside: (p0) {
                                 chatNotifier.isFocused = false;
-                                _services.removeTypingStatus(chatRoomId);
+                                chatNotifier.setTypingStatus(chatRoomId, false);
                               },
                               onTap: () {},
                               onEditingComplete: () {
                                 chatNotifier.isFocused = false;
+                                chatNotifier.setTypingStatus(chatRoomId, false);
                                 FocusScope.of(context).unfocus();
                               },
                               onChanged: (message) => {
-                                    if (message.isNotEmpty || message != '')
+                                    if (message.isNotEmpty && message != '')
                                       {
                                         chatNotifier.isFocused = true,
-                                        _services.addTypingStatus(chatRoomId)
+                                        chatNotifier.setTypingStatus(chatRoomId, true)
+                                      }
+                                    else
+                                      {
+                                        chatNotifier.setTypingStatus(chatRoomId, false)
                                       }
                                   },
                               messageController: _messageController,
