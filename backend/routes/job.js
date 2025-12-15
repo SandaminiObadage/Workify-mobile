@@ -23,6 +23,8 @@ router.get("/", jobController.getAllJobs);
 // GET ALL JOBS
 router.get("/agent/:id", jobController.getAgentJobs);
 
+// GET AGENT JOBS WITH APPLICANT COUNT
+router.get("/agent/:id/applicants", jobController.getAgentJobsWithApplicants);
 
 // SEARCH FOR JOBS
 router.get("/search/:key", jobController.searchJobs);

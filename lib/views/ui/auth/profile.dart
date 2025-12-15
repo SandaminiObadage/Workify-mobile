@@ -25,6 +25,11 @@ import 'package:jobhubv2_0/views/ui/auth/widgets/edit_button.dart';
 import 'package:jobhubv2_0/views/ui/auth/widgets/skills.dart';
 import 'package:jobhubv2_0/views/ui/jobs/upload_jobs.dart';
 import 'package:jobhubv2_0/views/ui/mainscreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jobhubv2_0/views/ui/agent/widgets/uploaded_job_tile.dart';
+import 'package:jobhubv2_0/controllers/agents_provider.dart';
+import 'package:jobhubv2_0/models/response/jobs/jobs_response.dart';
+import 'package:jobhubv2_0/views/common/loader.dart';
 import 'package:provider/provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -39,16 +44,24 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Future<ProfileRes>? userProfile;
   bool? loggedIn;
+  String? _agentUid;
 
   @override
   void initState() {
     getUserProfile();
+    loadAgentUid();
     // Load saved resume on profile page load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       var resumeProvider = Provider.of<ResumeProvider>(context, listen: false);
       resumeProvider.loadSavedResume();
     });
     super.initState();
+  }
+
+  Future<void> loadAgentUid() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Primary key used across app is 'uid'; fall back to 'userId' if absent
+    _agentUid = prefs.getString('uid') ?? prefs.getString('userId');
   }
 
   getUserProfile() async {
@@ -292,6 +305,52 @@ class _ProfilePageState extends State<ProfilePage> {
                                       ? const AgentTile()
                                       : const SizedBox.shrink(),
                                   const HeightSpacer(size: 20),
+                                  
+                                  // Display uploaded jobs if user is an agent
+                                  userData.isAgent == true
+                                      ? Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            ReusableText(
+                                                text: "My Uploaded Jobs",
+                                                style: appStyle(
+                                                    15, Colors.black, FontWeight.w600)),
+                                            const HeightSpacer(size: 10),
+                                            Consumer<AgentsNotifier>(
+                                              builder: (context, agentNotifier, child) {
+                                                final agentId = _agentUid ?? userData.id;
+                                                agentNotifier.getJobsList(agentId);
+                                                
+                                                return FutureBuilder<List<JobsResponse>>(
+                                                    future: agentNotifier.jobsList,
+                                                    builder: (context, snapshot) {
+                                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                                        return const Center(
+                                                          child: CircularProgressIndicator(),
+                                                        );
+                                                      } else if (snapshot.hasError) {
+                                                        return Text("Error loading jobs: ${snapshot.error}");
+                                                      } else if (snapshot.data!.isEmpty) {
+                                                        return const NoSearchResults(text: "No jobs uploaded yet");
+                                                      } else {
+                                                        final jobs = snapshot.data!;
+                                                        return Column(
+                                                          children: jobs.map((job) {
+                                                            return UploadedTile(
+                                                              text: 'profile',
+                                                              job: job,
+                                                            );
+                                                          }).toList(),
+                                                        );
+                                                      }
+                                                    });
+                                              },
+                                            ),
+                                            const HeightSpacer(size: 20),
+                                          ],
+                                        )
+                                      : const SizedBox.shrink(),
+                                  
                                   userData.skills == true
                                       ? const SkillsWidget()
                                       : Row(

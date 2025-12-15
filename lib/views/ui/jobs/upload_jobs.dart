@@ -37,345 +37,339 @@ class _UploadJobsState extends State<UploadJobs> {
   TextEditingController requirements4 = TextEditingController();
   TextEditingController requirements5 = TextEditingController();
 
+  late final List<TextEditingController> _reqControllers;
+
+  @override
+  void initState() {
+    _reqControllers = [
+      requirements1,
+      requirements2,
+      requirements3,
+      requirements4,
+      requirements5,
+    ];
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     var jobsNotifier = Provider.of<JobsNotifier>(context);
+    Widget sectionCard({required String title, required IconData icon, required Widget child}) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: Color(kOrange.value)),
+                const SizedBox(width: 8),
+                ReusableText(
+                  text: title,
+                  style: appStyle(14, Color(kDark.value), FontWeight.w700),
+                ),
+              ],
+            ),
+            const HeightSpacer(size: 12),
+            child,
+          ],
+        ),
+      );
+    }
+
+    Widget requirementField(TextEditingController controller, int index) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: buildtextfield(
+            hintText: "Requirement ${index + 1}",
+            maxLines: 2,
+            controller: controller,
+            onSubmitted: (value) {
+              if (value!.isEmpty && value.length < 50) {
+                return "Please add more detail";
+              } else {
+                return null;
+              }
+            }),
+      );
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF3F6FB),
       appBar: const PreferredSize(
         preferredSize: Size.fromHeight(50),
         child: CustomAppBar(text: "", child: BackBtn()),
       ),
-      body: Stack(
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.only(top: 0, left: 20, right: 20),
-              height: 100,
-              decoration: BoxDecoration(
-                  color: Color(kOrange.value),
-                  borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20))),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ReusableText(
-                      text: "Job Uploads",
-                      style: appStyle(14, Colors.white, FontWeight.w600)),
-                  imageUrl.text.isNotEmpty && imageUrl.text.contains('https://')
-                      ? Consumer<JobsNotifier>(
-                          builder: (context, jobsNotifier, child) {
-                            return CircularAvata(
-                                w: 20, h: 20, image: jobsNotifier.logo);
-                          },
-                        )
-                      : const SizedBox.shrink()
-                ],
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(kOrange.value), Color(kLightBlue.value)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ReusableText(
+                        text: "Create a Job",
+                        style: appStyle(18, Colors.white, FontWeight.w700)),
+                    const HeightSpacer(size: 4),
+                    ReusableText(
+                        text: "Publish openings to your talent pool",
+                        style: appStyle(12, Colors.white70, FontWeight.w500)),
+                  ],
+                ),
+                if (imageUrl.text.isNotEmpty && imageUrl.text.contains('https://'))
+                  Consumer<JobsNotifier>(
+                    builder: (context, jobsNotifier, child) {
+                      return CircularAvata(w: 36, h: 36, image: jobsNotifier.logo);
+                    },
+                  )
+                else
+                  const Icon(Icons.work_outline, color: Colors.white, size: 28)
+              ],
             ),
           ),
-          Positioned(
-              top: 80,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20)),
-                  color: Color(0xFFFBFBFB),
-                ),
-                child: ListView(
+
+          const HeightSpacer(size: 16),
+
+          sectionCard(
+            title: "Company & Role",
+            icon: Icons.business_center_outlined,
+            child: Column(
+              children: [
+                buildtextfield(
+                    hintText: "Job Title",
+                    controller: title,
+                    onSubmitted: (value) => value!.isEmpty ? "Please fill this field" : null),
+                buildtextfield(
+                    hintText: "Company",
+                    controller: company,
+                    onSubmitted: (value) => value!.isEmpty ? "Please fill this field" : null),
+                Row(
                   children: [
-                    const HeightSpacer(size: 10),
-                    buildtextfield(
-                        hintText: "Job Title",
-                        controller: title,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty) {
-                            return "Please fill this field";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    buildtextfield(
-                        hintText: "Company",
-                        controller: company,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty) {
-                            return "Please fill this field";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SizedBox(
-                          width: width * 0.65,
-                          child: Consumer<JobsNotifier>(
-                            builder: (context, jobsNotifier, child) {
-                              return buildtextfield(
-                                  hintText: "Logo URL (or use upload button)",
-                                  controller: imageUrl,
-                                  onChanged: (value) =>
-                                      {jobsNotifier.setLogo(imageUrl.text)},
-                                  onSubmitted: (value) {
-                                    if (value!.isEmpty &&
-                                        imageUrl.text.contains('https://')) {
-                                      return "Please fill this field";
-                                    } else {
-                                      return null;
-                                    }
-                                  });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                          width: width * 0.25,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              // Show loading
-                              Get.snackbar(
-                                "Uploading", 
-                                "Please wait while we upload your image...",
-                                backgroundColor: Color(kOrange.value),
-                                colorText: Colors.white,
-                              );
-                              
-                              // Upload image
-                              String? uploadedUrl = await ImageUploadHelper.pickAndUploadImage('company_logos');
-                              
-                              if (uploadedUrl != null) {
-                                imageUrl.text = uploadedUrl;
-                                Get.snackbar(
-                                  "Success", 
-                                  "Image uploaded successfully!",
-                                  backgroundColor: Colors.green,
-                                  colorText: Colors.white,
-                                );
-                              } else {
-                                Get.snackbar(
-                                  "Error", 
-                                  "Failed to upload image. Please try again.",
-                                  backgroundColor: Colors.red,
-                                  colorText: Colors.white,
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.upload_file, size: 16),
-                            label: const Text("Upload", style: TextStyle(fontSize: 12)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(kOrange.value),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                            ),
-                          ),
-                        ),
-                      ],
+                    Expanded(
+                      flex: 2,
+                      child: Consumer<JobsNotifier>(
+                        builder: (context, jobsNotifier, child) {
+                          return buildtextfield(
+                              hintText: "Logo URL (or use upload)",
+                              controller: imageUrl,
+                              onChanged: (value) => jobsNotifier.setLogo(imageUrl.text),
+                              onSubmitted: (value) {
+                                if (value!.isEmpty && imageUrl.text.contains('https://')) {
+                                  return "Please fill this field";
+                                } else {
+                                  return null;
+                                }
+                              });
+                        },
+                      ),
                     ),
-                    buildtextfield(
-                        hintText: "Location",
-                        controller: location,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty) {
-                            return "Please fill this field";
-                          } else {
-                            return null;
-                          }
-                        }),
-
-                        buildtextfield(
-                        hintText: "Contract",
-                        controller: contract,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty) {
-                            return "Please fill this field";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: ReusableText(
-                          text: "Salary Options",
-                          style: appStyle(12, Colors.black, FontWeight.w600)),
-                    ),
+                    const SizedBox(width: 12),
                     SizedBox(
-                        height: 30,
-                        child: Consumer<JobsNotifier>(
-                          builder: (context, jobsNotifier, child) {
-                            return ListView.builder(
-                              padding: EdgeInsets.zero,
-                              scrollDirection: Axis.horizontal,
-                              itemCount: jobsNotifier.salaries.length,
-                              itemBuilder: (context, index) {
-                                var data = jobsNotifier.salaries[index];
-                                return ChoiceChip(
-                                  labelPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
-                                  visualDensity: VisualDensity.standard,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
-                                  label: Text(
-                                    data['title'],
-                                    style: appStyle(
-                                        10, Colors.black, FontWeight.w500),
-                                  ),
-                                  selected: data['isSelected'],
-                                  selectedColor: Color(kOrange.value),
-                                  onSelected: (newState) {
-                                    jobsNotifier.toggleCheck(index);
-                                    jobsNotifier.selectedSalary = data['title'];
-                                  },
-                                );
-                              },
+                      width: 110,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          Get.snackbar(
+                            "Uploading",
+                            "Uploading your image...",
+                            backgroundColor: Color(kOrange.value),
+                            colorText: Colors.white,
+                          );
+
+                          String? uploadedUrl = await ImageUploadHelper.pickAndUploadImage('company_logos');
+
+                          if (uploadedUrl != null) {
+                            imageUrl.text = uploadedUrl;
+                            Get.snackbar(
+                              "Success",
+                              "Image uploaded successfully!",
+                              backgroundColor: Colors.green,
+                              colorText: Colors.white,
                             );
-                          },
-                        )),
-                    const HeightSpacer(size: 10),
-                    buildtextfield(
-                        hintText: "Salary Range",
-                        controller: salary,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty) {
-                            return "Please fill this field";
                           } else {
-                            return null;
+                            Get.snackbar(
+                              "Error",
+                              "Failed to upload image. Please try again.",
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
                           }
-                        }),
-                    const HiringSwitcher(text: "Hiring Status"),
-                    buildtextfield(
-                        hintText: "Description",
-                        maxLines: 3,
-                        controller: description,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty && value.length < 50) {
-                            return "Description should have more than 50 characters";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    ReusableText(
-                        text: "Requirements",
-                        style: appStyle(14, Colors.black, FontWeight.w600)),
-                    const HeightSpacer(size: 10),
-                    buildtextfield(
-                        hintText: "Requirements",
-                        maxLines: 2,
-                        controller: requirements1,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty && value.length < 50) {
-                            return "Description should have more than 50 characters";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    buildtextfield(
-                        hintText: "Requirements",
-                        maxLines: 2,
-                        controller: requirements2,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty && value.length < 50) {
-                            return "Description should have more than 50 characters";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    buildtextfield(
-                        hintText: "Requirements",
-                        maxLines: 2,
-                        controller: requirements3,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty && value.length < 50) {
-                            return "Description should have more than 50 characters";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    buildtextfield(
-                        hintText: "Requirements",
-                        maxLines: 2,
-                        controller: requirements4,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty && value.length < 50) {
-                            return "Description should have more than 50 characters";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    buildtextfield(
-                        hintText: "Requirements",
-                        maxLines: 2,
-                        controller: requirements5,
-                        onSubmitted: (value) {
-                          if (value!.isEmpty && value.length < 50) {
-                            return "Description should have more than 50 characters";
-                          } else {
-                            return null;
-                          }
-                        }),
-                    const HeightSpacer(size: 20),
-                    CustomOutlineBtn(
-                      width: width,
-                      hieght: 40,
-                      onTap: () async {
-                        CreateJobsRequest model = CreateJobsRequest(
-                            title: title.text,
-                            location: location.text,
-                            company: company.text,
-                            hiring: jobsNotifier.isSwitched,
-                            description: description.text,
-                            salary: salary.text,
-                            period: jobsNotifier.selectedSalary,
-                            contract: contract.text,
-                            imageUrl: imageUrl.text,
-                            agentId: userUid,
-                            agentName: name,
-                            requirements: [
-                              requirements1.text,
-                              requirements2.text,
-                              requirements3.text,
-                              requirements4.text,
-                              requirements5.text
-                            ]);
-
-                        var newModel = createJobsRequestToJson(model);
-
-                        bool success = await JobsHelper.createJob(newModel);
-                        
-                        if (success) {
-                          Get.snackbar(
-                            "Success", 
-                            "Job uploaded successfully!",
-                            colorText: Color(kLight.value),
-                            backgroundColor: Color(kLightBlue.value),
-                            icon: const Icon(Icons.check_circle)
-                          );
-                          Get.to(() => const MainScreen());
-                        } else {
-                          Get.snackbar(
-                            "Error", 
-                            "Failed to upload job. Please try again.",
-                            colorText: Color(kLight.value),
-                            backgroundColor: Colors.red,
-                            icon: const Icon(Icons.error)
-                          );
-                        }
-                      },
-                      color: Color(kOrange.value),
-                      color2: Colors.white,
-                      text: "Upload Job",
+                        },
+                        icon: const Icon(Icons.upload_file, size: 14),
+                        label: const Text("Upload", style: TextStyle(fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(kOrange.value),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ))
+                buildtextfield(
+                    hintText: "Location",
+                    controller: location,
+                    onSubmitted: (value) => value!.isEmpty ? "Please fill this field" : null),
+                buildtextfield(
+                    hintText: "Contract (e.g. Full-time)",
+                    controller: contract,
+                    onSubmitted: (value) => value!.isEmpty ? "Please fill this field" : null),
+              ],
+            ),
+          ),
+
+          sectionCard(
+            title: "Compensation",
+            icon: Icons.payments_outlined,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ReusableText(
+                    text: "Salary cadence",
+                    style: appStyle(12, Color(kDarkGrey.value), FontWeight.w600)),
+                const HeightSpacer(size: 8),
+                SizedBox(
+                    height: 34,
+                    child: Consumer<JobsNotifier>(
+                      builder: (context, jobsNotifier, child) {
+                        return ListView.builder(
+                          padding: EdgeInsets.zero,
+                          scrollDirection: Axis.horizontal,
+                          itemCount: jobsNotifier.salaries.length,
+                          itemBuilder: (context, index) {
+                            var data = jobsNotifier.salaries[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ChoiceChip(
+                                labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+                                visualDensity: VisualDensity.compact,
+                                label: Text(
+                                  data['title'],
+                                  style: appStyle(11, Colors.black, FontWeight.w600),
+                                ),
+                                selected: data['isSelected'],
+                                selectedColor: Color(kOrange.value).withOpacity(0.14),
+                                onSelected: (newState) {
+                                  jobsNotifier.toggleCheck(index);
+                                  jobsNotifier.selectedSalary = data['title'];
+                                },
+                                side: BorderSide(
+                                  color: data['isSelected'] ? Color(kOrange.value) : Color(kLightGrey.value),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    )),
+                const HeightSpacer(size: 12),
+                buildtextfield(
+                    hintText: "Salary range (e.g. 45000 - 65000)",
+                    controller: salary,
+                    onSubmitted: (value) => value!.isEmpty ? "Please fill this field" : null),
+                const HeightSpacer(size: 12),
+                const HiringSwitcher(text: "Hiring Status"),
+              ],
+            ),
+          ),
+
+          sectionCard(
+            title: "Job Story",
+            icon: Icons.description_outlined,
+            child: buildtextfield(
+                hintText: "Describe the role, team, and impact",
+                maxLines: 4,
+                controller: description,
+                onSubmitted: (value) {
+                  if (value!.isEmpty && value.length < 50) {
+                    return "Description should have more than 50 characters";
+                  } else {
+                    return null;
+                  }
+                }),
+          ),
+
+          sectionCard(
+            title: "Requirements",
+            icon: Icons.checklist_outlined,
+            child: Column(
+              children: List.generate(
+                  _reqControllers.length,
+                  (index) => requirementField(_reqControllers[index], index)),
+            ),
+          ),
+
+          const HeightSpacer(size: 8),
+          CustomOutlineBtn(
+            width: width,
+            hieght: 48,
+            onTap: () async {
+              CreateJobsRequest model = CreateJobsRequest(
+                  title: title.text,
+                  location: location.text,
+                  company: company.text,
+                  hiring: jobsNotifier.isSwitched,
+                  description: description.text,
+                  salary: salary.text,
+                  period: jobsNotifier.selectedSalary,
+                  contract: contract.text,
+                  imageUrl: imageUrl.text,
+                  agentId: userUid,
+                  agentName: name,
+                  requirements: _reqControllers.map((c) => c.text).toList());
+
+              var newModel = createJobsRequestToJson(model);
+
+              bool success = await JobsHelper.createJob(newModel);
+              
+              if (success) {
+                Get.snackbar(
+                  "Success", 
+                  "Job uploaded successfully!",
+                  colorText: Color(kLight.value),
+                  backgroundColor: Color(kLightBlue.value),
+                  icon: const Icon(Icons.check_circle)
+                );
+                Get.to(() => const MainScreen());
+              } else {
+                Get.snackbar(
+                  "Error", 
+                  "Failed to upload job. Please try again.",
+                  colorText: Color(kLight.value),
+                  backgroundColor: Colors.red,
+                  icon: const Icon(Icons.error)
+                );
+              }
+            },
+            color: Color(kOrange.value),
+            color2: Colors.white,
+            text: "Publish Job",
+          ),
         ],
       ),
     );

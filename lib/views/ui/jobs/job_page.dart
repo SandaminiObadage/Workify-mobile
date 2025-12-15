@@ -42,12 +42,14 @@ class _JobPageState extends State<JobPage> {
   String username = '';
   String sender = '';
   bool _isApplying = false; // Add loading state for apply button
+  bool _hasApplied = false; // Track if user has already applied
 
   @override
   void initState() {
     super.initState();
     _loadJobData();
     getUserUid();
+    _checkIfUserApplied();
   }
 
   void _loadJobData() {
@@ -62,6 +64,15 @@ class _JobPageState extends State<JobPage> {
     userUid = prefs.getString('uid') ?? '';
     username = prefs.getString('username') ?? 'Andre';
     sender = prefs.getString('profile') ?? '';
+  }
+
+  _checkIfUserApplied() async {
+    final bool hasApplied = await AppliedHelper.hasUserApplied(widget.id);
+    if (mounted) {
+      setState(() {
+        _hasApplied = hasApplied;
+      });
+    }
   }
 
   Future<void> createChatRoom(Map<String, dynamic> jobDetails, List<String> users,
@@ -364,7 +375,7 @@ class _JobPageState extends State<JobPage> {
                                         color: Color(kLight.value)),
                                     const SizedBox(height: 12),
                                     CustomOutlineBtn(
-                                        onTap: _isApplying ? null : () async {
+                                        onTap: (_isApplying || _hasApplied) ? null : () async {
                                           if (_isApplying) return; // Prevent multiple taps
                                           
                                           setState(() {
@@ -376,6 +387,9 @@ class _JobPageState extends State<JobPage> {
                                             bool success = await AppliedHelper.applyJob(model);
                                             
                                             if (success) {
+                                              setState(() {
+                                                _hasApplied = true;
+                                              });
                                               zoomNotifier.currentIndex = 1;
                                               Get.snackbar(
                                                 "Success", 
@@ -408,14 +422,18 @@ class _JobPageState extends State<JobPage> {
                                             }
                                           }
                                         },
-                                        color2: Color(kOrange.value),
+                                        color2: _hasApplied 
+                                            ? const Color.fromARGB(255, 192, 91, 91)! 
+                                            : Color(kOrange.value),
                                         width: width,
                                         hieght: hieght * 0.06,
                                         text: loggedIn == false
                                             ? "Please login to apply"
-                                            : _isApplying 
-                                              ? "Applying..."
-                                              : "Apply Now",
+                                            : _hasApplied
+                                              ? "✓ Already Applied"
+                                              : _isApplying 
+                                                ? "Applying..."
+                                                : "Apply Now",
                                         color: Color(kLight.value)),
                                   ],
                                 ),

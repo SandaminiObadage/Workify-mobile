@@ -158,6 +158,31 @@ module.exports = {
         }
     },
 
+    getAgentJobsWithApplicants: async (req, res) => {
+        const Application = require("../models/Applications");
+        const uid = req.params.id;
+        
+        try {
+            const jobs = await Job.find({agentId: uid}, {__v: 0, updatedAt: 0}).sort({ createdAt: -1 });
+            
+            // Get applicant count for each job
+            const jobsWithApplicants = await Promise.all(
+                jobs.map(async (job) => {
+                    const applicantCount = await Application.countDocuments({ job: job._id });
+                    return {
+                        ...job.toObject(),
+                        applicantCount: applicantCount
+                    };
+                })
+            );
+            
+            res.status(200).json(jobsWithApplicants);
+        } catch (error) {
+            console.error('Error getting agent jobs with applicants:', error);
+            res.status(500).json(error);
+        }
+    },
+
     advancedSearch: async (req, res) => {
         try {
             const { 

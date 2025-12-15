@@ -252,4 +252,35 @@ class JobsHelper {
       throw Exception("Failed to perform advanced search: $e");
     }
   }
+
+  // Get agent jobs with applicant counts
+  static Future<List<dynamic>> getAgentJobsWithApplicants(String agentId) async {
+    try {
+      Map<String, String> requestHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      var url = Uri.parse('${Config.baseUrl}${Config.jobs}/agent/$agentId/applicants');
+      print('Fetching agent jobs with applicants from: $url'); // Debug print
+      
+      var response = await client.get(
+        url,
+        headers: requestHeaders,
+      ).timeout(Duration(seconds: 10));
+
+      print('Response status: ${response.statusCode}'); // Debug print
+      print('Response body: ${response.body}'); // Debug print
+
+      if (response.statusCode == 200) {
+        List<dynamic> jobsList = jsonDecode(response.body);
+        return jobsList;
+      } else {
+        throw Exception("Failed to get agent jobs. Status: ${response.statusCode}");
+      }
+    } catch (e) {
+      print('Error fetching agent jobs with applicants: $e'); // Debug print
+      throw Exception("Failed to get agent jobs with applicants: $e");
+    }
+  }
 }

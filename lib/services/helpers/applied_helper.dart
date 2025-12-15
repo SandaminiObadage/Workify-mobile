@@ -29,7 +29,7 @@ class AppliedHelper {
     }
   }
 
-  // DELETE BOOKMARKS
+  // GET APPLIED JOBS
   static Future<List<Applied>> getApplied() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
@@ -51,6 +51,21 @@ class AppliedHelper {
       return applied;
     } else {
       throw Exception('Failed to applied jobs');
+    }
+  }
+
+  // CHECK IF USER HAS ALREADY APPLIED TO A JOB
+  static Future<bool> hasUserApplied(String jobId) async {
+    try {
+      List<Applied> appliedJobs = await getApplied();
+      
+      // Check if job is in the applied list
+      bool hasApplied = appliedJobs.any((application) => application.job.id == jobId);
+      
+      return hasApplied;
+    } catch (e) {
+      print('Error checking if user applied: $e');
+      return false;
     }
   }
 }
