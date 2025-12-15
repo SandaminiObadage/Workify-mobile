@@ -72,9 +72,18 @@ class ResumeProvider extends ChangeNotifier {
   // Load saved resume URL
   Future<void> loadSavedResume() async {
     try {
-      String? url = await ResumeHelper.getResumeUrl();
-      if (url != null) {
-        _resumeUrl = url;
+      // First, try server (authoritative, per-user)
+      String? serverFileName = await ResumeHelper.fetchResumeFromServer();
+      if (serverFileName != null && serverFileName.isNotEmpty) {
+        _resumeUrl = serverFileName;
+        notifyListeners();
+        return;
+      }
+
+      // Fallback to locally saved value
+      String? local = await ResumeHelper.getResumeUrl();
+      if (local != null) {
+        _resumeUrl = local;
         notifyListeners();
       }
     } catch (e) {

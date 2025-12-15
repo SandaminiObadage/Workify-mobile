@@ -37,6 +37,7 @@ class ResumeHelper {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
+      final String? uid = prefs.getString('uid');
 
       if (token == null) {
         print('No authentication token found');
@@ -73,8 +74,11 @@ class ResumeHelper {
         // Parse response to get the server-generated filename
         final responseData = json.decode(response.body);
         final serverFileName = responseData['fileName'] as String;
-        
-        // Save the server-generated filename to local preferences
+
+        // Save for this user (namespaced) and a backward-compatible global key
+        if (uid != null && uid.isNotEmpty) {
+          await prefs.setString('resumeUrl:$uid', serverFileName);
+        }
         await prefs.setString('resumeUrl', serverFileName);
         return serverFileName;
       } else {
@@ -91,6 +95,10 @@ class ResumeHelper {
   static Future<bool> saveResumeUrl(String resumeUrl) async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? uid = prefs.getString('uid');
+      if (uid != null && uid.isNotEmpty) {
+        await prefs.setString('resumeUrl:$uid', resumeUrl);
+      }
       await prefs.setString('resumeUrl', resumeUrl);
       return true;
     } catch (e) {
@@ -103,9 +111,43 @@ class ResumeHelper {
   static Future<String?> getResumeUrl() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? uid = prefs.getString('uid');
+      // Prefer user-scoped key; fallback to legacy global key
+      if (uid != null && uid.isNotEmpty) {
+        return prefs.getString('resumeUrl:$uid') ?? prefs.getString('resumeUrl');
+      }
       return prefs.getString('resumeUrl');
     } catch (e) {
       print('Error getting resume URL: $e');
+      return null;
+    }
+  }
+
+  // Fetch current user's resume info from backend; returns fileName if found
+  static Future<String?> fetchResumeFromServer() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+      if (token == null) return null;
+
+      final url = Uri.parse('${Config.baseUrl}/api/users/resume');
+      final response = await http.get(url, headers: {
+        'Authorization': 'Bearer $token',
+      });
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // API returns a Resume document; prefer 'fileName'
+        final String fileName = data['fileName'] ?? '';
+        if (fileName.isNotEmpty) {
+          // Persist locally for offline reuse
+          await saveResumeUrl(fileName);
+          return fileName;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching resume from server: $e');
       return null;
     }
   }
