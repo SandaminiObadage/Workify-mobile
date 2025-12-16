@@ -86,9 +86,35 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Search \nFind & Apply",
-                  style: appStyle(38, Color(kDark.value), FontWeight.bold),
+                Align(
+                  alignment: Alignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Workify",
+                        style: appStyle(28, Color(Color.fromARGB(255, 240, 142, 14).value), FontWeight.bold)
+                            .copyWith(
+                                fontStyle: FontStyle.italic,
+                                fontFamily: "Times New Roman"),
+                      ),
+                      Text(
+                        "Your Career Starts Here",
+                        style:
+                            appStyle(15, Color(kDark.value), FontWeight.bold)
+                                .copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    fontFamily: "Times New Roman"),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Search \nFind & Apply",
+                          style: appStyle(38, Color(kDark.value), FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const HeightSpacer(size: 30),
                 SearchWidget(

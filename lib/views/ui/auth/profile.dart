@@ -110,6 +110,12 @@ class _ProfilePageState extends State<ProfilePage> {
                           return Text("Error ${snapshot.error}");
                         } else {
                           final userData = snapshot.data;
+                          final avatarUrl = (userData?.profile != null &&
+                                  userData!.profile!.isNotEmpty)
+                              ? userData.profile!
+                              :
+                              // DiceBear allows CORS on web, avoiding ui-avatars CORS errors
+                              "https://api.dicebear.com/7.x/initials/png?seed=${Uri.encodeComponent(userData?.username ?? "Guest")}&backgroundColor=0d8abc&textColor=ffffff";
                           return buildStyleContainer(
                             context,
                             Padding(
@@ -129,11 +135,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                         Expanded(
                                           child: Row(
                                             children: [
-                                              const CircularAvata(
+                                              CircularAvata(
                                                 w: 50,
                                                 h: 50,
-                                                image:
-                                                    "https://ui-avatars.com/api/?name=Profile&background=0D8ABC&color=fff&size=128",
+                                                image: avatarUrl,
                                               ),
                                               const WidthSpacer(width: 20),
                                               Expanded(
