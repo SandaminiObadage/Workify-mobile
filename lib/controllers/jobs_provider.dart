@@ -7,6 +7,7 @@ import 'package:jobhubv2_0/models/response/jobs/get_job.dart';
 import 'package:jobhubv2_0/models/response/jobs/jobs_response.dart';
 import 'package:jobhubv2_0/services/helpers/book_helper.dart';
 import 'package:jobhubv2_0/services/helpers/jobs_helper.dart';
+import 'package:jobhubv2_0/services/helpers/matching_helper.dart';
 
 class JobsNotifier extends ChangeNotifier {
   late Future<List<JobsResponse>> jobList;
@@ -14,6 +15,13 @@ class JobsNotifier extends ChangeNotifier {
   late Future<List<JobsResponse>> recentJobsList;
   late Future<GetJobRes> job;
   Future<List<AllBookMarks>>? bookmarks;
+  
+  // Recommended jobs properties
+  List<JobsResponse> _recommendedJobs = [];
+  List<double> _recommendedJobsScores = [];
+  bool _isLoadingRecommended = false;
+  String _recommendedJobsError = '';
+  
   String selectedSalary = '';
   String logo = '';
   List<dynamic> _salaries;
@@ -21,6 +29,12 @@ class JobsNotifier extends ChangeNotifier {
   JobsNotifier({
     List<dynamic>? salaries,
   }) : _salaries = salaries!;
+
+  // Getters for recommended jobs
+  List<JobsResponse> get recommendedJobs => _recommendedJobs;
+  List<double> get recommendedJobsScores => _recommendedJobsScores;
+  bool get isLoadingRecommended => _isLoadingRecommended;
+  String get recommendedJobsError => _recommendedJobsError;
 
   List<dynamic> get salaries => _salaries;
 
@@ -60,6 +74,38 @@ class JobsNotifier extends ChangeNotifier {
 
   getRecentJobs({int limit = 3}) {
     recentJobsList = JobsHelper.getRecentJobs(limit: limit);
+  }
+
+  /// Fetch recommended jobs for a user
+  Future<void> getRecommendedJobs(String userId, {int limit = 10}) async {
+    _isLoadingRecommended = true;
+    _recommendedJobsError = '';
+    notifyListeners();
+
+    try {
+      final result = await MatchingHelper.getRecommendedJobs(
+        userId,
+        limit: limit,
+      );
+
+      if (result['success']) {
+        _recommendedJobs = result['jobs'] ?? [];
+        _recommendedJobsScores = result['scores'] ?? [];
+        _recommendedJobsError = '';
+      } else {
+        _recommendedJobs = [];
+        _recommendedJobsScores = [];
+        _recommendedJobsError = result['message'] ?? 'Failed to fetch recommended jobs';
+      }
+    } catch (e) {
+      _recommendedJobs = [];
+      _recommendedJobsScores = [];
+      _recommendedJobsError = 'Error: $e';
+      print('Error fetching recommended jobs: $e');
+    } finally {
+      _isLoadingRecommended = false;
+      notifyListeners();
+    }
   }
 
   String _bookmarkId = '';

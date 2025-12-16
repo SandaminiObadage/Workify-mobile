@@ -14,6 +14,11 @@ class LoginNotifier extends ChangeNotifier {
   late Future<List<Skills>> skills;
   bool _obscureText = true;
   bool _loader = false;
+  
+  // User properties
+  String userUid = '';
+  String name = '';
+  String profile = '';
 
   bool get obscureText => _obscureText;
 

@@ -61,7 +61,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                             ? Color(kLight.value)
                             : Color(kLightGrey.value)),
               
-               drawerItem(
+                drawerItem(
                         MaterialCommunityIcons.briefcase_upload_outline,
                         "Uploaded Jobs",
                         4,
@@ -70,10 +70,18 @@ class _DrawerScreenState extends State<DrawerScreen> {
                             : Color(kLightGrey.value)),
               
                drawerItem(
-                        FontAwesome5Regular.user_circle,
-                        "Profile",
+                        MaterialCommunityIcons.briefcase_search_outline,
+                        "Recommended Jobs",
                         5,
                         zoomNotifier.currentIndex == 5
+                            ? Color(kLight.value)
+                            : Color(kLightGrey.value)),
+
+               drawerItem(
+                        FontAwesome5Regular.user_circle,
+                        "Profile",
+                        6,
+                        zoomNotifier.currentIndex == 6
                             ? Color(kLight.value)
                             : Color(kLightGrey.value))
                    

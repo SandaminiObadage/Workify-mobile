@@ -11,6 +11,7 @@ const jobRoute = require("./routes/job");
 const bookmarkRoute = require("./routes/bookmark");
 const appliedRoute = require("./routes/apply");
 const chatRoute = require("./routes/chat");
+const matchingRoute = require("./routes/matching");
 
 
 dotenv.config()
@@ -47,6 +48,7 @@ app.use("/api/jobs", jobRoute);
 app.use("/api/bookmarks", bookmarkRoute);
 app.use("/api/applied", appliedRoute);
 app.use("/api/chat", chatRoute);
+app.use("/api/matching", matchingRoute);
 
 
 //app.listen(process.env.PORT || 4000, () => console.log(`Example app listening on port ${process.env.PORT}!`));
