@@ -139,7 +139,8 @@ class JobsHelper {
         'Accept': 'application/json',
       };
 
-      var url = Uri.parse('${Config.baseUrl}${Config.jobs}');
+      // Use the ?new query parameter to fetch recently posted jobs sorted by date
+      var url = Uri.parse('${Config.baseUrl}${Config.jobs}?new=true');
       var response = await client.get(
         url,
         headers: requestHeaders,
@@ -159,6 +160,34 @@ class JobsHelper {
     } catch (e) {
       print('Error fetching recent job: $e');
       throw Exception("Failed to get the recent job: $e");
+    }
+  }
+
+  // Get multiple recent jobs (for recently posted section)
+  static Future<List<JobsResponse>> getRecentJobs({int limit = 3}) async {
+    try {
+      Map<String, String> requestHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      // Use the ?new query parameter to fetch recently posted jobs sorted by date
+      var url = Uri.parse('${Config.baseUrl}${Config.jobs}?new=true');
+      var response = await client.get(
+        url,
+        headers: requestHeaders,
+      ).timeout(Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        var jobsList = jobsResponseFromJson(response.body);
+        // Return top N recent jobs
+        return jobsList.take(limit).toList();
+      } else {
+        throw Exception("Failed to get recent jobs. Status: ${response.statusCode}");
+      }
+    } catch (e) {
+      print('Error fetching recent jobs: $e');
+      throw Exception("Failed to get recent jobs: $e");
     }
   }
 

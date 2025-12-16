@@ -75,11 +75,10 @@ class ResumeHelper {
         final responseData = json.decode(response.body);
         final serverFileName = responseData['fileName'] as String;
 
-        // Save for this user (namespaced) and a backward-compatible global key
+        // Save for this user (namespaced) only
         if (uid != null && uid.isNotEmpty) {
           await prefs.setString('resumeUrl:$uid', serverFileName);
         }
-        await prefs.setString('resumeUrl', serverFileName);
         return serverFileName;
       } else {
         print('Failed to upload resume: ${response.statusCode}');
@@ -98,9 +97,9 @@ class ResumeHelper {
       final String? uid = prefs.getString('uid');
       if (uid != null && uid.isNotEmpty) {
         await prefs.setString('resumeUrl:$uid', resumeUrl);
+        return true;
       }
-      await prefs.setString('resumeUrl', resumeUrl);
-      return true;
+      return false;
     } catch (e) {
       print('Error saving resume URL: $e');
       return false;
@@ -112,11 +111,11 @@ class ResumeHelper {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final String? uid = prefs.getString('uid');
-      // Prefer user-scoped key; fallback to legacy global key
+      // Only return user-scoped resume, no fallback to prevent cross-user leakage
       if (uid != null && uid.isNotEmpty) {
-        return prefs.getString('resumeUrl:$uid') ?? prefs.getString('resumeUrl');
+        return prefs.getString('resumeUrl:$uid');
       }
-      return prefs.getString('resumeUrl');
+      return null;
     } catch (e) {
       print('Error getting resume URL: $e');
       return null;

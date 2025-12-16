@@ -105,8 +105,19 @@ class LoginNotifier extends ChangeNotifier {
 
   logout() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? uid = prefs.getString('uid');
+    
     await prefs.setBool('loggedIn', false);
     await prefs.remove('token');
+    await prefs.remove('userId');
+    await prefs.remove('profile');
+    await prefs.remove('uid');
+    await prefs.remove('username');
+    
+    // Clear user-specific resume URL
+    if (uid != null && uid.isNotEmpty) {
+      await prefs.remove('resumeUrl:$uid');
+    }
   }
 
   updateProfile(ProfileUpdateReq model) async {

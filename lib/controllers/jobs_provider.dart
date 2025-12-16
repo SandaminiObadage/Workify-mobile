@@ -11,6 +11,7 @@ import 'package:jobhubv2_0/services/helpers/jobs_helper.dart';
 class JobsNotifier extends ChangeNotifier {
   late Future<List<JobsResponse>> jobList;
   late Future<JobsResponse> recent;
+  late Future<List<JobsResponse>> recentJobsList;
   late Future<GetJobRes> job;
   Future<List<AllBookMarks>>? bookmarks;
   String selectedSalary = '';
@@ -55,6 +56,10 @@ class JobsNotifier extends ChangeNotifier {
 
   getRecent() {
     recent = JobsHelper.getRecent();
+  }
+
+  getRecentJobs({int limit = 3}) {
+    recentJobsList = JobsHelper.getRecentJobs(limit: limit);
   }
 
   String _bookmarkId = '';

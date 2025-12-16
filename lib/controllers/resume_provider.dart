@@ -80,14 +80,20 @@ class ResumeProvider extends ChangeNotifier {
         return;
       }
 
-      // Fallback to locally saved value
+      // Fallback to locally saved value (user-scoped only)
       String? local = await ResumeHelper.getResumeUrl();
-      if (local != null) {
+      if (local != null && local.isNotEmpty) {
         _resumeUrl = local;
+        notifyListeners();
+      } else {
+        // No resume for this user - clear any stale state
+        _resumeUrl = null;
         notifyListeners();
       }
     } catch (e) {
       print('Error loading resume: $e');
+      _resumeUrl = null;
+      notifyListeners();
     }
   }
 
