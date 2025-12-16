@@ -137,9 +137,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                           CustomButton(
                             onTap: () {
                               signupNotifier.setLoader = true;
-                              SignupModel model = SignupModel(
-                                  username: name.text,
-                                  email: email.text,
+                                SignupModel model = SignupModel(
+                                  username: name.text.trim(),
+                                  email: email.text.trim().toLowerCase(),
                                   password: password.text);
 
                               String newModel = signupModelToJson(model);

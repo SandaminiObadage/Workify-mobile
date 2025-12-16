@@ -7,8 +7,10 @@ const { verifyTokenAndAuthorization, verifyTokenAndAdmin } = require("../middlew
 router.post("/",verifyTokenAndAuthorization, applyController.apply);
 
 
-// LOGIN 
+// GET APPLIED JOBS 
 router.get("/",verifyTokenAndAuthorization, applyController.getApplied);
 
+// GET APPLICANTS FOR A SPECIFIC JOB
+router.get("/job/:jobId", verifyTokenAndAuthorization, applyController.getJobApplicants);
 
 module.exports = router

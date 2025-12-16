@@ -12,6 +12,7 @@ import 'package:jobhubv2_0/views/common/height_spacer.dart';
 import 'package:jobhubv2_0/views/common/reusable_text.dart';
 import 'package:jobhubv2_0/views/ui/jobs/job_page.dart';
 import 'package:jobhubv2_0/views/ui/jobs/edit_jobs.dart';
+import 'package:jobhubv2_0/views/ui/jobs/job_applicants_page.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -334,15 +335,32 @@ class _MyUploadedJobsPageState extends State<MyUploadedJobsPage> {
                                         ),
                                       ],
                                     ),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.people, size: 16, color: Color(kOrange.value)),
-                                        SizedBox(width: 4.w),
-                                        ReusableText(
-                                          text: "$applicantCount",
-                                          style: appStyle(13, Color(kOrange.value), FontWeight.w600),
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Navigate to applicants page
+                                        Get.to(() => JobApplicantsPage(
+                                          jobId: jobId,
+                                          jobTitle: jobData['title'] ?? 'Job',
+                                          company: jobData['company'] ?? 'Company',
+                                        ));
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                                        decoration: BoxDecoration(
+                                          color: Color(kOrange.value).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                      ],
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.people, size: 16, color: Color(kOrange.value)),
+                                            SizedBox(width: 4.w),
+                                            ReusableText(
+                                              text: "$applicantCount",
+                                              style: appStyle(13, Color(kOrange.value), FontWeight.w600),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),

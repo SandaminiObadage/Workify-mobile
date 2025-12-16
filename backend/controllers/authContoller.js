@@ -9,13 +9,16 @@ module.exports = {
         const user = req.body;
 
         try {
+            // Normalize email to lowercase for consistent login matching
+            const normalizedEmail = (req.body.email || '').toLowerCase().trim();
+
             // Temporarily bypass Firebase for testing
             const newUser = new User({
                 username: req.body.username,
-                email: req.body.email,
+                email: normalizedEmail,
                 uid: "temp_" + Date.now(), // temporary UID
                 password: CryptoJS.AES.encrypt(req.body.password, process.env.SECRET).toString(),
-                profile: "https://ui-avatars.com/api/?name=" + encodeURIComponent(req.body.username) + "&background=0D8ABC&color=fff"
+                profile: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + encodeURIComponent(req.body.username)
             });
 
             await newUser.save();
@@ -29,7 +32,8 @@ module.exports = {
 
     loginUser: async (req, res) => {
         try {
-            const user = await User.findOne({ email: req.body.email }, { __v: 0, createdAt: 0, updatedAt: 0, skills: 0, email: 0});
+            const email = (req.body.email || '').toLowerCase().trim();
+            const user = await User.findOne({ email }, { __v: 0, createdAt: 0, updatedAt: 0, skills: 0, email: 0});
             if (!user) {
                 return res.status(401).json("Wrong Login Details");
             }

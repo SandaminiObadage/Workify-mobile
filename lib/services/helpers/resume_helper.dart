@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:jobhubv2_0/services/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:html' as html show Blob, Url, AnchorElement;
+import 'dart:html' as html show Blob, Url, AnchorElement, window;
 
 class ResumeHelper {
   // Pick and upload resume directly to backend
@@ -163,25 +163,30 @@ class ResumeHelper {
         return;
       }
 
-      final String downloadUrl = '${Config.baseUrl}/api/users/resume/download/$fileName';
+      // Prefer direct static path when available (lets agents download applicants' resumes)
+      final directUrl = '${Config.baseUrl}/resumes/$fileName';
+      final authedUrl = '${Config.baseUrl}/api/users/resume/download/$fileName';
+      final targetUrl = kIsWeb ? directUrl : authedUrl;
       
-      print('Downloading resume from: $downloadUrl');
+      print('Downloading resume from: $targetUrl');
       
-      // For web, use dart:html to download the file
       if (kIsWeb) {
-        final request = http.Request('GET', Uri.parse(downloadUrl));
+        // Open in new tab; rely on static hosting of /resumes
+        html.window.open(targetUrl, '_blank');
+      } else {
+        final request = http.Request('GET', Uri.parse(authedUrl));
         request.headers['Authorization'] = 'Bearer $token';
-        
         final response = await request.send();
         if (response.statusCode == 200) {
           final bytes = await response.stream.toBytes();
-          // Create blob and download for web
           final blob = html.Blob([bytes]);
           final url = html.Url.createObjectUrlFromBlob(blob);
           final anchor = html.AnchorElement(href: url)
             ..setAttribute("download", fileName)
             ..click();
           html.Url.revokeObjectUrl(url);
+        } else {
+          print('Failed to download resume: ${response.statusCode}');
         }
       }
     } catch (e) {

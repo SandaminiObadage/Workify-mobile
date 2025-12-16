@@ -131,8 +131,8 @@ class _LoginPageState extends State<LoginPage> {
                                   onTap: () {
                                     if (loginNotifier.validateAndSave()) {
                                       loginNotifier.setLoader = true;
-                                      LoginModel model = LoginModel(
-                                          email: email.text,
+                                        LoginModel model = LoginModel(
+                                          email: email.text.trim().toLowerCase(),
                                           password: password.text);
                                       String newModel = loginModelToJson(model);
                                       loginNotifier.userLogin(

@@ -31,5 +31,22 @@ module.exports = {
         } catch (error) {
             res.status(500)
         }
+    },
+
+    getJobApplicants: async (req, res) => {
+        const jobId = req.params.jobId;
+        try {
+            const applicants = await Application.find({ job: jobId }, { __v: 0 })
+                .sort({ createdAt: -1 })
+                .populate({
+                    path: 'user',
+                    select: 'username email profile location phone skills isAgent resume'
+                });
+
+            res.status(200).json(applicants);
+        } catch (error) {
+            console.error('Error getting job applicants:', error);
+            res.status(500).json({ message: 'Error fetching applicants', error });
+        }
     }
 }

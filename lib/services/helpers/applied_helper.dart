@@ -68,4 +68,27 @@ class AppliedHelper {
       return false;
     }
   }
+
+  // GET APPLICANTS FOR A SPECIFIC JOB
+  static Future<List<dynamic>> getJobApplicants(String jobId) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+
+    Map<String, String> requestHeaders = {
+      'Content-Type': 'application/json',
+      'authorization': 'Bearer $token'
+    };
+
+    var url = Uri.parse('${Config.baseUrl}${Config.applied}/job/$jobId');
+    var response = await client.get(
+      url,
+      headers: requestHeaders,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get job applicants');
+    }
+  }
 }
