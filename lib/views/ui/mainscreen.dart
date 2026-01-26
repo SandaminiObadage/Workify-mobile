@@ -11,6 +11,7 @@ import 'package:jobhubv2_0/views/ui/chat/chat_list.dart';
 import 'package:jobhubv2_0/views/ui/home/homepage.dart';
 import 'package:jobhubv2_0/views/ui/jobs/my_uploaded_jobs_page.dart';
 import 'package:jobhubv2_0/views/ui/jobs/recommended_jobs_page.dart';
+import 'package:jobhubv2_0/views/ui/admin/admin_dashboard_page.dart';
 import 'package:provider/provider.dart';
 
 class MainScreen extends StatefulWidget {
@@ -63,6 +64,8 @@ class _MainScreenState extends State<MainScreen> {
         return const ProfilePage(
           drawer: true,
         );
+      case 7:
+        return const AdminDashboardPage();
       default:
         return const HomePage();
     }

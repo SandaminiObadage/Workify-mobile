@@ -12,6 +12,7 @@ const bookmarkRoute = require("./routes/bookmark");
 const appliedRoute = require("./routes/apply");
 const chatRoute = require("./routes/chat");
 const matchingRoute = require("./routes/matching");
+const adminRoute = require("./routes/admin");
 
 
 dotenv.config()
@@ -31,7 +32,7 @@ mongoose.connect(process.env.MONGO_URL)
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'token'],
     credentials: false,
     optionsSuccessStatus: 200
 }));
@@ -49,6 +50,7 @@ app.use("/api/bookmarks", bookmarkRoute);
 app.use("/api/applied", appliedRoute);
 app.use("/api/chat", chatRoute);
 app.use("/api/matching", matchingRoute);
+app.use("/api/admin", adminRoute);
 
 
 //app.listen(process.env.PORT || 4000, () => console.log(`Example app listening on port ${process.env.PORT}!`));

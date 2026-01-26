@@ -7,6 +7,7 @@ import 'package:jobhubv2_0/controllers/zoom_provider.dart';
 import 'package:jobhubv2_0/views/common/app_style.dart';
 import 'package:jobhubv2_0/views/common/reusable_text.dart';
 import 'package:jobhubv2_0/views/common/width_spacer.dart';
+import 'package:jobhubv2_0/services/auth_helper.dart';
 import 'package:provider/provider.dart';
 
 class DrawerScreen extends StatefulWidget {
@@ -18,8 +19,29 @@ class DrawerScreen extends StatefulWidget {
 }
 
 class _DrawerScreenState extends State<DrawerScreen> {
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final isAdmin = await AuthHelper.isAdmin();
+    print('🔍 Admin check result: $isAdmin');
+    if (mounted) {
+      setState(() {
+        _isAdmin = isAdmin;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Check admin status every time the drawer is built
+    _checkAdminStatus();
+    
     return Consumer<ZoomNotifier>(
       builder: (context, zoomNotifier, child) {
         return GestureDetector(
@@ -82,6 +104,16 @@ class _DrawerScreenState extends State<DrawerScreen> {
                         "Profile",
                         6,
                         zoomNotifier.currentIndex == 6
+                            ? Color(kLight.value)
+                            : Color(kLightGrey.value)),
+               
+               // Show Admin Dashboard only if user is admin
+               if (_isAdmin)
+                 drawerItem(
+                        MaterialCommunityIcons.shield_account,
+                        "Admin Dashboard",
+                        7,
+                        zoomNotifier.currentIndex == 7
                             ? Color(kLight.value)
                             : Color(kLightGrey.value))
                    
