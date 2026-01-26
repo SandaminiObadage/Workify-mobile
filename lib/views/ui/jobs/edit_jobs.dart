@@ -15,6 +15,7 @@ import 'package:jobhubv2_0/views/ui/jobs/widgets/hiring_switcher.dart';
 import 'package:jobhubv2_0/views/ui/jobs/widgets/textfield.dart';
 import 'package:jobhubv2_0/views/ui/mainscreen.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EditJobs extends StatefulWidget {
   const EditJobs({
@@ -26,26 +27,67 @@ class EditJobs extends StatefulWidget {
 }
 
 class _EditJobsState extends State<EditJobs> {
-  TextEditingController title = TextEditingController(text: editable.title);
-  TextEditingController location =
-      TextEditingController(text: editable.location);
-  TextEditingController company = TextEditingController(text: editable.company);
-  TextEditingController salary = TextEditingController(text: editable.salary);
-  TextEditingController contract =
-      TextEditingController(text: editable.contract);
-  TextEditingController description =
-      TextEditingController(text: editable.description);
-  TextEditingController imageUrl = TextEditingController();
-  TextEditingController requirements1 =
-      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 0 ? editable.requirements[0] : "");
-  TextEditingController requirements2 =
-      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 1 ? editable.requirements[1] : "");
-  TextEditingController requirements3 =
-      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 2 ? editable.requirements[2] : "");
-  TextEditingController requirements4 =
-      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 3 ? editable.requirements[3] : "");
-  TextEditingController requirements5 =
-      TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 4 ? editable.requirements[4] : "");
+  late TextEditingController title;
+  late TextEditingController location;
+  late TextEditingController company;
+  late TextEditingController salary;
+  late TextEditingController contract;
+  late TextEditingController description;
+  late TextEditingController imageUrl;
+  late TextEditingController requirements1;
+  late TextEditingController requirements2;
+  late TextEditingController requirements3;
+  late TextEditingController requirements4;
+  late TextEditingController requirements5;
+
+  String userUid = '';
+  String name = '';
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Initialize controllers with current editable data
+    title = TextEditingController(text: editable.title);
+    location = TextEditingController(text: editable.location);
+    company = TextEditingController(text: editable.company);
+    salary = TextEditingController(text: editable.salary);
+    contract = TextEditingController(text: editable.contract);
+    description = TextEditingController(text: editable.description);
+    imageUrl = TextEditingController(text: editable.imageUrl.isNotEmpty ? editable.imageUrl : 'https://via.placeholder.com/400');
+    requirements1 = TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 0 ? editable.requirements[0] : "");
+    requirements2 = TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 1 ? editable.requirements[1] : "");
+    requirements3 = TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 2 ? editable.requirements[2] : "");
+    requirements4 = TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 3 ? editable.requirements[3] : "");
+    requirements5 = TextEditingController(text: editable.requirements.isNotEmpty && editable.requirements.length > 4 ? editable.requirements[4] : "");
+    
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userUid = prefs.getString('uid') ?? '';
+      name = prefs.getString('username') ?? '';
+    });
+  }
+
+  @override
+  void dispose() {
+    title.dispose();
+    location.dispose();
+    company.dispose();
+    salary.dispose();
+    contract.dispose();
+    description.dispose();
+    imageUrl.dispose();
+    requirements1.dispose();
+    requirements2.dispose();
+    requirements3.dispose();
+    requirements4.dispose();
+    requirements5.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -326,6 +368,30 @@ class _EditJobsState extends State<EditJobs> {
                             width: width,
                             hieght: 40,
                             onTap: () async {
+                              // Validate user info is loaded
+                              if (userUid.isEmpty || name.isEmpty) {
+                                Get.snackbar(
+                                  "Error", 
+                                  "User information not loaded. Please try again.",
+                                  colorText: Color(kLight.value),
+                                  backgroundColor: Colors.red,
+                                  icon: const Icon(Icons.error)
+                                );
+                                return;
+                              }
+
+                              // Validate required fields
+                              if (title.text.isEmpty || location.text.isEmpty || company.text.isEmpty) {
+                                Get.snackbar(
+                                  "Error", 
+                                  "Please fill in all required fields (Title, Location, Company).",
+                                  colorText: Color(kLight.value),
+                                  backgroundColor: Colors.red,
+                                  icon: const Icon(Icons.error)
+                                );
+                                return;
+                              }
+
                               if (imageUrl.text.isEmpty) {
                                 imageUrl.text = editable.imageUrl;
                               }

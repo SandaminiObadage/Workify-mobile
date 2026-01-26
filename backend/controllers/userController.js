@@ -131,38 +131,61 @@ module.exports = {
     },
 
     postAgent: async (req, res) => {
-        console.log(req.user.id);
-        const newAgent = new Agent({
-            company: req.body.company,
-            hq_address: req.body.hq_address,
-            working_hrs: req.body.working_hrs,
-            userId: req.user.id,
-            uid: req.body.uid
-        });
         try {
+            // Check if agent already exists
+            const existingAgent = await Agent.findOne({ userId: req.user.id });
+            if (existingAgent) {
+                return res.status(400).json({ message: "Agent profile already exists. Use update instead." });
+            }
+
+            // Validate required fields
+            if (!req.body.company || !req.body.hq_address || !req.body.working_hrs) {
+                return res.status(400).json({ message: "All fields are required" });
+            }
+
+            // Get user to retrieve uid
+            const user = await User.findById(req.user.id);
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            const newAgent = new Agent({
+                company: req.body.company,
+                hq_address: req.body.hq_address,
+                working_hrs: req.body.working_hrs,
+                userId: req.user.id,
+                uid: user.uid || req.body.uid
+            });
             
             await newAgent.save();
             await User.findByIdAndUpdate(req.user.id, { $set: { isAgent: true } });
-            res.status(200).json({ status: true });
+            res.status(200).json({ status: true, agent: newAgent });
         } catch (err) {
+            console.error('Error creating agent:', err);
             res.status(500).json(err)
         }
     },
 
     updateAgent: async (req, res) => {
-       
-        const newAgent = new Agent({
-            company: req.body.company,
-            hq_address: req.body.hq_address,
-            working_hrs: req.body.working_hrs,
-            userId: req.user.id,
-            uid: req.body.uid
-        });
-
         try {
-            
-            await newAgent.save();
-            res.status(200).json({ status: true });
+            const updatedAgent = await Agent.findOneAndUpdate(
+                { userId: req.user.id },
+                {
+                    $set: {
+                        company: req.body.company,
+                        hq_address: req.body.hq_address,
+                        working_hrs: req.body.working_hrs,
+                        uid: req.body.uid
+                    }
+                },
+                { new: true }
+            );
+
+            if (!updatedAgent) {
+                return res.status(404).json({ message: "Agent not found" });
+            }
+
+            res.status(200).json({ status: true, agent: updatedAgent });
         } catch (err) {
             res.status(500).json(err)
         }

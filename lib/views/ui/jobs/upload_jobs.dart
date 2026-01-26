@@ -15,6 +15,7 @@ import 'package:jobhubv2_0/views/ui/jobs/widgets/hiring_switcher.dart';
 import 'package:jobhubv2_0/views/ui/jobs/widgets/textfield.dart';
 import 'package:jobhubv2_0/views/ui/mainscreen.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UploadJobs extends StatefulWidget {
   const UploadJobs({super.key});
@@ -38,6 +39,9 @@ class _UploadJobsState extends State<UploadJobs> {
   TextEditingController requirements5 = TextEditingController();
 
   late final List<TextEditingController> _reqControllers;
+  
+  String userUid = '';
+  String name = '';
 
   @override
   void initState() {
@@ -49,6 +53,17 @@ class _UploadJobsState extends State<UploadJobs> {
       requirements5,
     ];
     super.initState();
+    // Set default placeholder image URL if empty
+    imageUrl.text = 'https://via.placeholder.com/400';
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userUid = prefs.getString('uid') ?? '';
+      name = prefs.getString('username') ?? '';
+    });
   }
 
   @override
@@ -329,6 +344,30 @@ class _UploadJobsState extends State<UploadJobs> {
             width: width,
             hieght: 48,
             onTap: () async {
+              // Validate user info is loaded
+              if (userUid.isEmpty || name.isEmpty) {
+                Get.snackbar(
+                  "Error", 
+                  "User information not loaded. Please try again.",
+                  colorText: Color(kLight.value),
+                  backgroundColor: Colors.red,
+                  icon: const Icon(Icons.error)
+                );
+                return;
+              }
+
+              // Validate required fields
+              if (title.text.isEmpty || location.text.isEmpty || company.text.isEmpty) {
+                Get.snackbar(
+                  "Error", 
+                  "Please fill in all required fields (Title, Location, Company).",
+                  colorText: Color(kLight.value),
+                  backgroundColor: Colors.red,
+                  icon: const Icon(Icons.error)
+                );
+                return;
+              }
+
               CreateJobsRequest model = CreateJobsRequest(
                   title: title.text,
                   location: location.text,

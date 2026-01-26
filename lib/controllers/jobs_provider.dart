@@ -12,7 +12,7 @@ import 'package:jobhubv2_0/services/helpers/matching_helper.dart';
 class JobsNotifier extends ChangeNotifier {
   late Future<List<JobsResponse>> jobList;
   late Future<JobsResponse> recent;
-  late Future<List<JobsResponse>> recentJobsList;
+  Future<List<JobsResponse>>? recentJobsList;
   late Future<GetJobRes> job;
   Future<List<AllBookMarks>>? bookmarks;
   
